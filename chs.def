@@ -1,0 +1,13 @@
+;
+;   file                 : chs.def
+;   created              : Fri Dec 10 14:05:25 CET 2010
+;   copyright            : (C) 2002 Christoph Schwering
+;
+
+LIBRARY	chs
+
+SECTIONS .data READ WRITE
+
+EXPORTS
+	chs
+
