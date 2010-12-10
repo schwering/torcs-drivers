@@ -60,7 +60,7 @@ void cDriver::drive()
   const float steerAngle = roadAngle + midAngle;
   const float steer = steerAngle / car->_steerLock;
   car->_steerCmd = restrictRange(-1.0f, 1.0f, steer);
-  car->_accelCmd = 0.3f;
+  car->_accelCmd = 1.0f;
   car->_brakeCmd = 0.0f;
 
   adjustGear();
@@ -81,11 +81,14 @@ void cDriver::adjustGear()
     lastShiftTime = now;
     lastShiftDir = UP;
   } else if (car->_enginerpm > 0.95 * max &&
+             car->_gear < 6 &&
              (lastShiftTime + 2.0 < now || lastShiftDir == UP)) {
     car->_gearCmd = car->_gear + 1;
     lastShiftTime = now;
     lastShiftDir = UP;
-  } else if (car->_gear > 1 && car->_enginerpm < 0.1 * max &&
+  } else if (car->_gear > 1 &&
+             car->_enginerpm < 0.1 * max &&
+             car->_gear > 1 &&
              (lastShiftTime + 2.0 < now || lastShiftDir == DOWN)) {
     car->_gearCmd = car->_gear - 1;
     lastShiftTime = now;

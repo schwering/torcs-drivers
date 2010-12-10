@@ -1,0 +1,9 @@
+* Plugin-System
+        - Plugins registrieren sich mit Prioritaet bei Driver
+        - Driver fuhert in drive() jedes Plugin nach Prio. sortiert aus
+* Strecken-Profil erstellen
+        - zuerst auf Mittellinie fahren
+        - Drehung/Meter-Quotient
+        - Spline berechnen und dann glaetten?
+        - mehrere gute Linien fahren, bewerten und dann moeglichst auf einer fahren?
+
