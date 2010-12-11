@@ -1,6 +1,8 @@
 #ifndef driverH
 #define driverH
 
+#include <vector>
+
 #include <car.h>
 #include <raceman.h>
 #include <robot.h>
@@ -8,9 +10,31 @@
 
 #include "macros.h"
 
-class cDriver
-{
+#define MAX_HANDLERS 10
+#define REGISTER_HANDLER(HandlerClass) \
+    namespace {\
+      cDriver::cHandler* factory() {\
+        return new HandlerClass();\
+      }\
+      bool registered = cDriver::registerHandlerFactory(factory);\
+    }
+
+class cDriver {
  public:
+  class cHandler {
+   public:
+    inline cHandler() { }
+    /** Handlers with highest prio. are executed last. */
+    virtual int priority() const = 0;
+    virtual void handle(cDriver& state) = 0;
+    static bool hasHigherPriority(const cHandler* a, const cHandler* b);
+   private:
+    DISALLOW_COPY_AND_ASSIGN(cHandler);
+  };
+  typedef cHandler* (*tfFactory)();
+
+  static bool registerHandlerFactory(tfFactory factory);
+
   cDriver();
   ~cDriver();
 
@@ -19,26 +43,22 @@ class cDriver
   void drive(tCarElt* car, tSituation* sit);
   void endRace(tCarElt* car, tSituation* sit);
 
- protected:
-  enum ShiftDirection { UP, DOWN };
+  tTrack*     track;
+  tCarElt*    car;
+  tSituation* sit;
 
-  // TODO virtual and impls to subclass
+ private:
+  DISALLOW_COPY_AND_ASSIGN(cDriver);
+
+  static tfFactory factories[];
+  static int nFactories;
+
   void initTrack();
   void newRace();
   void drive();
   void endRace();
 
-  void adjustGear();
-
-  tTrack*     track;
-  tCarElt*    car;
-  tSituation* sit;
-
-  double         lastShiftTime;
-  ShiftDirection lastShiftDir;
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(cDriver);
+  std::vector<cHandler*> handlers;
 };
 
 #endif

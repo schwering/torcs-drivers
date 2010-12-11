@@ -1,14 +1,40 @@
 #include "driver.h"
 
+#include <algorithm>
+
 #include "util.h"
+
+using std::vector;
+
+cDriver::tfFactory cDriver::factories[MAX_HANDLERS];
+int cDriver::nFactories = 0;
+
+bool cDriver::registerHandlerFactory(tfFactory factory)
+{
+  if (nFactories < MAX_HANDLERS) {
+    factories[nFactories++] = factory;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool cDriver::cHandler::hasHigherPriority(const cHandler* a, const cHandler* b)
+{
+  return a->priority() < b->priority();
+}
 
 cDriver::cDriver()
   : track(NULL),
     car(NULL),
-    sit(NULL),
-    lastShiftTime(0.0),
-    lastShiftDir(DOWN)
+    sit(NULL)
 {
+  for (int i = 0; i < nFactories; ++i) {
+    tfFactory factory = factories[i];
+    cHandler* handler = factory();
+    handlers.push_back(handler);
+  }
+  std::sort(handlers.begin(), handlers.end(), &cHandler::hasHigherPriority);
 }
 
 cDriver::~cDriver()
@@ -53,49 +79,17 @@ void cDriver::newRace()
 
 void cDriver::drive()
 {
-  const float roadAngle = angleRelToTrack(car);
-  const float yPos = relativeYPos(car);
-  const float midAngle = -1.0f * yPos;
-
-  const float steerAngle = roadAngle + midAngle;
-  const float steer = steerAngle / car->_steerLock;
-  car->_steerCmd = restrictRange(-1.0f, 1.0f, steer);
-  car->_accelCmd = 1.0f;
-  car->_brakeCmd = 0.0f;
-
-  adjustGear();
+  for (vector<cHandler*>::const_iterator it = handlers.begin();
+       it != handlers.end(); ++it) {
+    cHandler* handler = *it;
+    handler->handle(*this);
+  }
 
   assertInRange(-1.0f, 1.0f, car->_steerCmd);
   assertInRange( 0.0f, 1.0f, car->_accelCmd);
   assertInRange( 0.0f, 1.0f, car->_brakeCmd);
   assertInRange( 0.0f, 1.0f, car->_clutchCmd);
   assertInRange(-1,  6,  car->_gearCmd);
-}
-
-void cDriver::adjustGear()
-{
-  const float max = car->_enginerpmRedLine;
-  const double now = sit->currentTime;
-  if (now <= 3.0) {
-    car->_gearCmd = 1;
-    lastShiftTime = now;
-    lastShiftDir = UP;
-  } else if (car->_enginerpm > 0.95 * max &&
-             car->_gear < 6 &&
-             (lastShiftTime + 2.0 < now || lastShiftDir == UP)) {
-    car->_gearCmd = car->_gear + 1;
-    lastShiftTime = now;
-    lastShiftDir = UP;
-  } else if (car->_gear > 1 &&
-             car->_enginerpm < 0.1 * max &&
-             car->_gear > 1 &&
-             (lastShiftTime + 2.0 < now || lastShiftDir == DOWN)) {
-    car->_gearCmd = car->_gear - 1;
-    lastShiftTime = now;
-    lastShiftDir = DOWN;
-  } else {
-    car->_gearCmd = car->_gear;
-  }
 }
 
 void cDriver::endRace()

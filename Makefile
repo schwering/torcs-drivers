@@ -9,7 +9,7 @@
 ROBOT       = chs
 MODULE      = ${ROBOT}.so
 MODULEDIR   = drivers/${ROBOT}
-SOURCES     = ${ROBOT}.cpp driver.cpp
+SOURCES     = ${ROBOT}.cpp driver.cpp ctrackprofile.cpp simpledriver.cpp transmission.cpp
 
 SHIPDIR     = drivers/${ROBOT}
 SHIP        = ${ROBOT}.xml car1-trb1.rgb logo.rgb

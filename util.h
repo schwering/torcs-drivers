@@ -10,19 +10,23 @@
 #define restrictRange(Lo, Hi, Val)    ((Val) < (Lo) ? (Lo) :\
                                         ((Val) > (Hi) ? (Hi) : (Val)))
 
-static inline float angleRelToTrack(tCarElt* car)
+namespace {
+
+inline float angleRelToTrack(tCarElt* car)
 {
-    assert(car);
-    float angle = RtTrackSideTgAngleL(&(car->_trkPos)) - car->_yaw;
-    NORM_PI_PI(angle);
-    return angle;
+  assert(car);
+  float angle = RtTrackSideTgAngleL(&(car->_trkPos)) - car->_yaw;
+  NORM_PI_PI(angle);
+  return angle;
 }
 
-static inline float relativeYPos(tCarElt* car)
+inline float relativeYPos(tCarElt* car)
 {
-    assert(car);
-    assert(car->_trkPos.seg->width != 0.0f);
-    return car->_trkPos.toMiddle / car->_trkPos.seg->width;
+  assert(car);
+  assert(car->_trkPos.seg->width != 0.0f);
+  return car->_trkPos.toMiddle / car->_trkPos.seg->width;
+}
+
 }
 
 #endif
