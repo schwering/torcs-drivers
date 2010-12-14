@@ -1,0 +1,15 @@
+I've tried to stick with the code conventions of TORCS even though I
+ * nowhere found them written down and
+ * really don't like (politely expressed) and understand them
+   (maybe there's some mutual cause?).
+
+I had first started only writing less C-like C++ and complying with
+Google's C++ conventions, but the code was so different to TORCS's
+that it just looked horrible and wrapping the complete TORCS API
+turned out to be more work I expected.
+
+But besides that, writing a TORCS-robot is fun! :-)
+
+If you want for whatever reason to contact me, mail to
+schwering@gmail.com
+
