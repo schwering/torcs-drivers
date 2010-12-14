@@ -1,5 +1,7 @@
 #include "transmission.h"
 
+#include "util.h"
+
 REGISTER_HANDLER(cTransmission);
 
 cTransmission::cTransmission()
@@ -19,7 +21,7 @@ void cTransmission::handle(cDriver& state)
 
   const float max = car->_enginerpmRedLine;
   const double now = sit->currentTime;
-  if (now <= 3.0) {
+  if (inRange(0.0, 3.0, now)) {
     car->_gearCmd = 1;
     lastShiftTime = now;
     lastShiftDir = UP;

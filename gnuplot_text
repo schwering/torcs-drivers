@@ -1,0 +1,6 @@
+set terminal png
+set output "output.png"
+set size 1600,800
+plot "track_points" using 1:2
+
+

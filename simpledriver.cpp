@@ -10,6 +10,10 @@ int cSimpleDriver::priority() const {
 
 void cSimpleDriver::handle(cDriver& state)
 {
+  if (state.sit->currentTime < 0.0) {
+    return;
+  }
+
   tCarElt* car = state.car;
   tSituation* sit = state.sit;
 
@@ -22,6 +26,5 @@ void cSimpleDriver::handle(cDriver& state)
   car->_steerCmd = restrictRange(-1.0f, 1.0f, steer);
   car->_accelCmd = 0.3f;
   car->_brakeCmd = 0.0f;
-  car->_gearCmd = 1;
 }
 

@@ -8,6 +8,7 @@
 #include <robot.h>
 #include <track.h>
 
+#include "trackprofile.h"
 #include "macros.h"
 
 #define MAX_HANDLERS 10
@@ -58,7 +59,8 @@ class cDriver {
   void drive();
   void endRace();
 
-  std::vector<cHandler*> handlers;
+  cTrackProfile           trackProfile;
+  std::vector<cHandler*>  handlers;
 };
 
 #endif
