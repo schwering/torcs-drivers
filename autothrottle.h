@@ -10,9 +10,7 @@ class cAutoThrottle : public cDriver::cHandler
   virtual void handle(cDriver& state);
 
  private:
-  float currentPos() const;
-  float mis(int secs) const; // meters in seconds
-  float currentSpeed() const;
+  float mis(float secs) const;
   float profileSlopeAverage(int fromMeter,
                             int length,
                             int granularity = 10) const;

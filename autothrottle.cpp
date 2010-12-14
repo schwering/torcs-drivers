@@ -21,8 +21,7 @@ void cAutoThrottle::handle(cDriver& state)
   if (speedKmh < 50.0f) {
     return;
   }
-  //LOG("speed %f %f %f %f %f\n", car->_speed_x, car->_speed_y, car->_speed_z, car->_speed_X, car->_speed_Y);
-  const float curPos = currentPos();
+  const float curPos = RtGetDistFromStart(car);
   const int meter = (int) curPos;
   float slope;
   if ((slope = profileSlopeAverage(meter + mis(3), 12, 3)) > 90.0) {
@@ -51,21 +50,10 @@ void cAutoThrottle::handle(cDriver& state)
   }
 }
 
-float cAutoThrottle::currentPos() const
+float cAutoThrottle::mis(float secs) const
 {
   const tCarElt* car = state->car;
-  const tTrkLocPos pos = car->_trkPos;
-  const tTrackSeg* seg = pos.seg;
-  const float length = seg->lgfromstart + pos.toStart;
-  return length;
-}
-
-float cAutoThrottle::mis(int secs) const
-{
-  const tCarElt* car = state->car;
-  const float mps = car->_speed_x;
-  const float metersInSecs = mps * secs;
-  return metersInSecs;
+  return metersInSeconds(car, secs);
 }
 
 float cAutoThrottle::profileSlopeAverage(int fromMeter,
