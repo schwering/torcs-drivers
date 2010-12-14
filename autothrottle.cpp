@@ -4,6 +4,7 @@
 
 #include "trackprofile.h"
 #include "macros.h"
+#include "util.h"
 
 REGISTER_HANDLER(cAutoThrottle);
 
@@ -16,7 +17,7 @@ void cAutoThrottle::handle(cDriver& state)
   this->state = &state;
   tCarElt* car = state.car;
 
-  const float speedKmh = currentSpeed();
+  const float speedKmh = mps2kmph(car->_speed_x);
   if (speedKmh < 50.0f) {
     return;
   }
@@ -65,12 +66,6 @@ float cAutoThrottle::mis(int secs) const
   const float mps = car->_speed_x;
   const float metersInSecs = mps * secs;
   return metersInSecs;
-}
-
-float cAutoThrottle::currentSpeed() const
-{
-  const tCarElt* car = state->car;
-  return car->_speed_x * 60 * 60 / 1000;
 }
 
 float cAutoThrottle::profileSlopeAverage(int fromMeter,

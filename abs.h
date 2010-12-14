@@ -6,14 +6,13 @@
 class cAntiLockBrakeSystem : public cDriver::cHandler
 {
  public:
-  cAntiLockBrakeSystem() : lastTime(0.0), lastActive(false) { }
-
   virtual int priority() const;
   virtual void handle(cDriver& state);
 
  private:
-  double  lastTime;
-  bool    lastActive;
+  static const float MIN_SPEED;
+  static const float SLIP;
+  static const float RANGE;
 };
 
 #endif

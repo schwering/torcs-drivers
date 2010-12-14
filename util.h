@@ -22,6 +22,16 @@ inline float relativeYPos(tCarElt* car)
   return car->_trkPos.toMiddle / car->_trkPos.seg->width;
 }
 
+inline float mps2kmph(float mps)
+{
+  return mps * 3600.0f / 1000.0f;
+}
+
+inline float kmph2mps(float kmph)
+{
+  return kmph * 1000.0f / 3600.0f;
+}
+
 }
 
 #endif
