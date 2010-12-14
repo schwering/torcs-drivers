@@ -25,7 +25,7 @@ class cDriver {
   class cHandler {
    public:
     inline cHandler() { }
-    /** Handlers with highest prio. are executed last. */
+    /** Handlers with highest prio. are executed last. Yes, last. */
     virtual int priority() const = 0;
     virtual void handle(cDriver& state) = 0;
     static bool hasHigherPriority(const cHandler* a, const cHandler* b);

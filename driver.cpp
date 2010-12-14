@@ -2,8 +2,6 @@
 
 #include <algorithm>
 
-#include "util.h"
-
 using std::vector;
 
 cDriver::tfFactory cDriver::factories[MAX_HANDLERS];
@@ -95,11 +93,11 @@ void cDriver::drive()
     handler->handle(*this);
   }
 
-  assertInRange(-1.0f, 1.0f, car->_steerCmd);
-  assertInRange( 0.0f, 1.0f, car->_accelCmd);
-  assertInRange( 0.0f, 1.0f, car->_brakeCmd);
-  assertInRange( 0.0f, 1.0f, car->_clutchCmd);
-  assertInRange(-1,  6,  car->_gearCmd);
+  assertInRangeWarn(-1.0f, 1.0f, car->_steerCmd);
+  assertInRangeWarn( 0.0f, 1.0f, car->_accelCmd);
+  assertInRangeWarn( 0.0f, 1.0f, car->_brakeCmd);
+  assertInRangeWarn( 0.0f, 1.0f, car->_clutchCmd);
+  assertInRangeWarn(-1,  6,  car->_gearCmd);
 }
 
 void cDriver::endRace()

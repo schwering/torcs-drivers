@@ -5,11 +5,6 @@
 
 #include <robottools.h>
 
-#define inRange(Lo, Hi, Val)          (Lo <= Val && Val <= Hi)
-#define assertInRange(Lo, Hi, Val)    assert(Lo <= Val),assert(Val <= Hi)
-#define restrictRange(Lo, Hi, Val)    ((Val) < (Lo) ? (Lo) :\
-                                        ((Val) > (Hi) ? (Hi) : (Val)))
-
 namespace {
 
 inline float angleRelToTrack(tCarElt* car)

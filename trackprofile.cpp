@@ -3,8 +3,6 @@
 #include <cstdlib>
 #include <cmath>
 
-#include "util.h"
-
 cTrackProfile::cTrackProfile()
   : samples(NULL)
 {
