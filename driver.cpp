@@ -76,7 +76,9 @@ void cDriver::initTrack()
   for (cTrackProfile::const_iterator it = trackProfile.begin();
        it != trackProfile.end(); ++it) {
     const cTrackProfile::cSample sample = *it;
-    fprintf(fp, "%f %f\n", sample.x, sample.y);
+    const cTrackProfile::cVector diff = sample - prev;
+    prev = sample;
+    fprintf(fp, "%f %f %f\n", sample.x, sample.y, diff.y/diff.x);
   }
   fclose(fp);
 }

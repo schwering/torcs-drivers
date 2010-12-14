@@ -32,6 +32,9 @@ class cTrackProfile {
 
   const_iterator begin() const { return samples.begin(); }
   const_iterator end() const { return samples.end(); }
+  const cSample& operator[](size_t i) const {
+    return samples[i % samples.size()];
+  }
 
  private:
   DISALLOW_COPY_AND_ASSIGN(cTrackProfile);

@@ -44,9 +44,10 @@ class cDriver {
   void drive(tCarElt* car, tSituation* sit);
   void endRace(tCarElt* car, tSituation* sit);
 
-  tTrack*     track;
-  tCarElt*    car;
-  tSituation* sit;
+  tTrack*       track;
+  tCarElt*      car;
+  tSituation*   sit;
+  cTrackProfile trackProfile;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(cDriver);
@@ -59,7 +60,6 @@ class cDriver {
   void drive();
   void endRace();
 
-  cTrackProfile           trackProfile;
   std::vector<cHandler*>  handlers;
 };
 

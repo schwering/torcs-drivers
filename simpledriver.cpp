@@ -24,7 +24,7 @@ void cSimpleDriver::handle(cDriver& state)
   const float steerAngle = roadAngle + midAngle;
   const float steer = steerAngle / car->_steerLock;
   car->_steerCmd = restrictRange(-1.0f, 1.0f, steer);
-  car->_accelCmd = 0.3f;
+  car->_accelCmd = 1.0f;
   car->_brakeCmd = 0.0f;
 }
 
