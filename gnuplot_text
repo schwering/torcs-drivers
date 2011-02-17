@@ -1,6 +1,8 @@
+# Run GNU Plot and paste this:
+
 set terminal png
-set output "output.png"
-set size 1600,800
-plot "track_points" using 1:2
+set output "track_points.png"
+# set size 1600,800
+plot "/tmp/track_points" using 1:2
 
 

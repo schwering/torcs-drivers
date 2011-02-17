@@ -70,7 +70,7 @@ void cDriver::endRace(tCarElt* car, tSituation* sit)
 void cDriver::initTrack()
 {
   trackProfile.init(track);
-  FILE* fp = fopen("/home/chs/track_points", "w");
+  FILE* fp = fopen("/tmp/track_points", "w");
   assert(fp);
   cTrackProfile::cVector prev(0.0f, 0.0f);
   for (cTrackProfile::const_iterator it = trackProfile.begin();

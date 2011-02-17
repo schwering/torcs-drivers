@@ -1,15 +1,78 @@
-I've tried to stick with the code conventions of TORCS even though I
- * nowhere found them written down and
- * really don't like (politely expressed) and understand them
-   (maybe there's some mutual cause?).
+A simple, non-competitive TORCS robot.
 
-I had first started only writing less C-like C++ and complying with
-Google's C++ conventions, but the code was so different to TORCS's
-that it just looked horrible and wrapping the complete TORCS API
-turned out to be more work I expected.
+TRY IT OUT:
+-----------
+ $ cd torcs/src/drivers/chs
 
-But besides that, writing a TORCS-robot is fun! :-)
+ # view / edit code
 
+ $ make -C ../../../
+ $ sudo make -C ../../../ install
+ $ torcs
+
+ # Race -> Quick Race -> Configure Race
+ # choose any track (e.g. Forza) -> Accept
+ # remove all players and add `chs' -> Accept
+ # leave or change laps and/or race distance -> Accept -> New Race
+
+ # let the bot drive and then termiante TORCS
+
+ # the cDriver::initTrack() method wrote the file /tmp/track_points
+ # which can be visualized using GNU Plot:
+
+ $ ./gnuplot.sh
+
+ # or
+
+ $ gnuplot < gnuplot_text
+
+ # if I remember correctly:
+ #  * X axis is in meters of the track
+ #  * Y axis is in meters, too, I think, i.e. if the graph starts at
+      (0,0) and end at (3500,900), then Y = 900 means that in total we
+      900m more in left turns than in right turns
+ #  * positive slope means a left turn
+ #    negative slope menas a right turn,
+ #  * the greater the absolute slope, the sharper the bend
+ #  * all data is with respect to the middle of the track
+
+
+
+ARCHITECTURE:
+-------------
+The bot consists of some small subsystems, called `handlers' which register
+themselves at a central unit and which are called in each loop.
+
+CPP/H-FILE    | TYPE              | DESCRIPTION
+--------------+-------------------+---------------------------------------------
+chs           |                   | simply forwards everything to the driver
+--------------+-------------------+---------------------------------------------
+driver        | cDriver::cHandler | interface for subsystem that implement some
+              |                   | car functionality
+--------------+-------------------+---------------------------------------------
+driver        | cDriver           | administrates and calls the the handlers
+--------------+-------------------+---------------------------------------------
+trackprofile  | cTrackProfile     | utility to sample the track structure at the
+              |                   | beginning of the race
+--------------+-------------------+---------------------------------------------
+autothrottle  | cAutoThrottle     | naive handler that *tries* to control
+              |                   | speed automatically using the track profile
+--------------+-------------------+---------------------------------------------
+transmission  | cTransmission     | automatic transmission
+--------------+-------------------+---------------------------------------------
+simpledriver  | cSimpleDriver     | simple, not-used driver
+ 
+
+
+
+CONTACT:
+--------
 If you want for whatever reason to contact me, mail to
 schwering@gmail.com
+
+
+
+P.S.: The TORCS coding style sucks, to say the least.
+      I tried to be compatible with the existing TORCS code, so
+      my code looks weird, too.
 
