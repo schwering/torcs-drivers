@@ -19,7 +19,7 @@ inline float relativeYPos(tCarElt* car)
 {
   assert(car);
   assert(car->_trkPos.seg->width != 0.0f);
-  return car->_trkPos.toMiddle / car->_trkPos.seg->width;
+  return (car->_trkPos.toRight - 2.0f) / car->_trkPos.seg->width;
 }
 
 inline float mps2kmph(float mps)

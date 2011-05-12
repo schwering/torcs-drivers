@@ -4,7 +4,6 @@
 #include <cmath>
 
 cTrackProfile::cTrackProfile()
-  : samples(NULL)
 {
 }
 

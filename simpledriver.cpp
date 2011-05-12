@@ -2,7 +2,10 @@
 
 #include "util.h"
 
-REGISTER_HANDLER(cSimpleDriver);
+cSimpleDriver::cSimpleDriver(eOrientation ori)
+  : ori(ori)
+{
+}
 
 int cSimpleDriver::priority() const {
   return 200;
@@ -15,11 +18,23 @@ void cSimpleDriver::handle(cDriver& state)
   }
 
   tCarElt* car = state.car;
-  tSituation* sit = state.sit;
 
   const float roadAngle = angleRelToTrack(car);
-  const float yPos = relativeYPos(car);
-  const float midAngle = -1.0f * yPos;
+  const tTrkLocPos& pos = car->_trkPos;
+  const tTrackSeg& seg = *(pos.seg);
+  float desiredRelativeOffsetChange;
+  switch (ori) {
+    case ORI_LEFT:
+      desiredRelativeOffsetChange = -1.0f * (pos.toLeft - 0.5f) / seg.width;
+      break;
+    case ORI_MIDDLE:
+      desiredRelativeOffsetChange = pos.toMiddle / seg.width;
+      break;
+    case ORI_RIGHT:
+      desiredRelativeOffsetChange = (pos.toRight - 1.0f) / seg.width;
+      break;
+  }
+  const float midAngle = -1.0f * desiredRelativeOffsetChange;
 
   const float steerAngle = roadAngle + midAngle;
   const float steer = steerAngle / car->_steerLock;

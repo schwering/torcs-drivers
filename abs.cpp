@@ -1,10 +1,7 @@
 #include "abs.h"
 
-#include "trackprofile.h"
 #include "macros.h"
 #include "util.h"
-
-REGISTER_HANDLER(cAntiLockBrakeSystem);
 
 const float cAntiLockBrakeSystem::MIN_SPEED = kmph2mps(30.0f);
 const float cAntiLockBrakeSystem::SLIP = kmph2mps(10.0f);
@@ -17,7 +14,6 @@ int cAntiLockBrakeSystem::priority() const {
 void cAntiLockBrakeSystem::handle(cDriver& state)
 {
   tCarElt* car = state.car;
-  tSituation* sit = state.sit;
 
   const float carSpeed = car->_speed_x;
   if (carSpeed < MIN_SPEED) {

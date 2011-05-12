@@ -39,6 +39,8 @@ class cDriver {
   cDriver();
   ~cDriver();
 
+  void addHandler(cHandler* handler);
+
   void initTrack(tTrack* track, tSituation* sit);
   void newRace(tCarElt* car, tSituation* sit);
   void drive(tCarElt* car, tSituation* sit);

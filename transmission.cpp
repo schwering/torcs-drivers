@@ -2,8 +2,6 @@
 
 #include "util.h"
 
-REGISTER_HANDLER(cTransmission);
-
 cTransmission::cTransmission()
   : lastShiftTime(0.0),
     lastShiftDir(DOWN)

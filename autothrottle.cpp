@@ -6,8 +6,6 @@
 #include "macros.h"
 #include "util.h"
 
-REGISTER_HANDLER(cAutoThrottle);
-
 int cAutoThrottle::priority() const {
   return 500;
 }

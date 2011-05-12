@@ -39,6 +39,12 @@ cDriver::~cDriver()
 {
 }
 
+void cDriver::addHandler(cHandler* handler)
+{
+  handlers.push_back(handler);
+  std::sort(handlers.begin(), handlers.end(), &cHandler::hasHigherPriority);
+}
+
 void cDriver::initTrack(tTrack* track, tSituation* sit)
 {
   this->track = track;

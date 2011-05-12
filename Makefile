@@ -9,11 +9,11 @@
 ROBOT       = chs
 MODULE      = ${ROBOT}.so
 MODULEDIR   = drivers/${ROBOT}
-SOURCES     = ${ROBOT}.cpp driver.cpp trackprofile.cpp simpledriver.cpp transmission.cpp autothrottle.cpp abs.cpp
+SOURCES     = ${ROBOT}.cpp driver.cpp trackprofile.cpp simpledriver.cpp transmission.cpp autothrottle.cpp minithrottle.cpp abs.cpp
 
 SHIPDIR     = drivers/${ROBOT}
-SHIP        = ${ROBOT}.xml car1-trb1.rgb logo.rgb
-SHIPSUBDIRS = 
+SHIP        = ${ROBOT}.xml logo.rgb
+SHIPSUBDIRS = 0 1 2 3 4 5 6 7 8 9
 
 PKGSUBDIRS  = ${SHIPSUBDIRS}
 src-robots-chs_PKGFILES = $(shell find * -maxdepth 0 -type f -print)
