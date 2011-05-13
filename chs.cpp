@@ -50,21 +50,27 @@ static cDriver& get_driver(int index)
     drivers[index] = new cDriver();
     drivers[index]->addHandler(new cTransmission());
     switch (index) {
-      case 0:
+      case 0: {
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_LEFT));
-        drivers[index]->addHandler(new cMiniThrottle(169.0f));
+        drivers[index]->addHandler(new cMiniThrottle(59.0f));
         break;
-      case 1:
+      }
+      case 1: {
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_RIGHT));
-        drivers[index]->addHandler(new cMiniThrottle(170.0f));
-        drivers[index]->addHandler(new cWorldModel());
+        drivers[index]->addHandler(new cMiniThrottle(60.0f));
+        cWorldModel* wm = new cWorldModel();
+        wm->addListener(new cWorldModel::cSimplePrologSerializor());
+        drivers[index]->addHandler(wm);
         break;
-      case 2:
+      }
+      case 2: {
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_MIDDLE));
         break;
-      case 3:
+      }
+      case 3: {
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_RIGHT));
         break;
+      }
     }
   }
   return *drivers[index];

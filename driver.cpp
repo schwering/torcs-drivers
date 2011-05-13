@@ -2,8 +2,6 @@
 
 #include <algorithm>
 
-using std::vector;
-
 cDriver::tfFactory cDriver::factories[MAX_HANDLERS];
 int cDriver::nFactories = 0;
 
@@ -95,7 +93,7 @@ void cDriver::newRace()
 
 void cDriver::drive()
 {
-  for (vector<cHandler*>::const_iterator it = handlers.begin();
+  for (std::vector<cHandler*>::const_iterator it = handlers.begin();
        it != handlers.end(); ++it) {
     cHandler* handler = *it;
     handler->handle(*this);

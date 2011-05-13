@@ -1,12 +1,15 @@
 #ifndef worldmodelH
 #define worldmodelH
 
+#include <map>
+#include <vector>
+
 #include "driver.h"
 
 class cWorldModel : public cDriver::cHandler
 {
  public:
-  struct CarInfo
+  struct tCarInfo
   {
     const char* name;
     double time;
@@ -20,7 +23,13 @@ class cWorldModel : public cDriver::cHandler
   class cListener
   {
    public:
-    virtual void processCarInfo(const CarInfo& carInfo);
+    virtual void process(const tCarInfo& carInfo) = 0;
+  };
+
+  class cSimplePrologSerializor : public cListener
+  {
+   public:
+    virtual void process(const tCarInfo& ci);
   };
 
   virtual int priority() const;
@@ -29,7 +38,10 @@ class cWorldModel : public cDriver::cHandler
   void addListener(cListener* listener);
 
  private:
-  void process(double time, const tCarElt* car);
+  void fireEvents(double time, const tCarElt* car);
+
+  std::map<int, double> times;
+  std::vector<cListener*>  listeners;
 };
 
 #endif

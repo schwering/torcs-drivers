@@ -9,18 +9,22 @@ int cWorldModel::priority() const {
 
 void cWorldModel::handle(cDriver& state)
 {
-  static int j = 0;
-  if (++j % 30 != 0) return;
   for (int i = 0; i < state.sit->_ncars; ++i) {
-    process(state.sit->currentTime, state.sit->cars[i]);
+    const double now = state.sit->currentTime;
+    const tCarElt* car = state.sit->cars[i];
+    if (times.find(car->index) == times.end() ||
+        now - times[car->index] > 0.5) {
+      fireEvents(now, state.sit->cars[i]);
+      times[car->index] = now;
+    }
   }
-  printf("\n");
 }
 
-void cWorldModel::process(double time, const tCarElt* car)
+void cWorldModel::fireEvents(double time, const tCarElt* car)
 {
-  CarInfo ci;
+  tCarInfo ci;
   ci.name = car->_name;
+  ci.time = time;
   ci.veloc = car->_speed_x;
   ci.accel = car->_accel_x;
   const tTrkLocPos trkPos = car->_trkPos;
@@ -29,18 +33,30 @@ void cWorldModel::process(double time, const tCarElt* car)
   const tTrackSeg* seg = trkPos.seg;
   ci.pos = seg->lgfromstart + trkPos.toStart;
   ci.offset = -1.0f * trkPos.toMiddle;
-#if 0
-  printf("%lf: %7s v = %5.2fm/s = %5.1fkm/h f = %6.2fm/s^2 "\
-         "yaw = %5.2frad = %5.1fdeg dist=%.0fm\n",
-         time, name, veloc, mps2kmph(veloc), accel,
-         yaw, rad2deg(yaw), pos);
-#else
-  printf("(veloc('%s') = %f & yaw('%s') = %f, %lf)",
-         ci.name, ci.veloc, ci.name, ci.yaw, ci.time);
-#endif
+
+  for (std::vector<cListener*>::const_iterator it = listeners.begin();
+       it != listeners.end(); ++it) {
+    cListener* listeners = *it;
+    listeners->process(ci);
+  }
 }
 
 void cWorldModel::addListener(cWorldModel::cListener* listener)
 {
+  listeners.push_back(listener);
+}
+
+void cWorldModel::cSimplePrologSerializor::process(
+    const cWorldModel::tCarInfo& ci)
+{
+  printf("(pos('%s') = %f & "\
+         "offset('%s') = %f & "\
+         "veloc('%s') = %f & "\
+         "yaw('%s') = %f, %lf),\n",
+         ci.name, ci.pos,
+         ci.name, ci.offset,
+         ci.name, ci.veloc,
+         ci.name, ci.yaw,
+         ci.time);
 }
 
