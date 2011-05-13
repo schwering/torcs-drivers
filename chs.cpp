@@ -52,11 +52,11 @@ static cDriver& get_driver(int index)
     switch (index) {
       case 0:
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_LEFT));
-        drivers[index]->addHandler(new cMiniThrottle(190.75f));
+        drivers[index]->addHandler(new cMiniThrottle(169.0f));
         break;
       case 1:
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_RIGHT));
-        drivers[index]->addHandler(new cMiniThrottle(200.0f));
+        drivers[index]->addHandler(new cMiniThrottle(170.0f));
         drivers[index]->addHandler(new cWorldModel());
         break;
       case 2:

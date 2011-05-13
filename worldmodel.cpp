@@ -10,7 +10,7 @@ int cWorldModel::priority() const {
 void cWorldModel::handle(cDriver& state)
 {
   static int j = 0;
-  if (++j % 100 != 0) return;
+  if (++j % 30 != 0) return;
   for (int i = 0; i < state.sit->_ncars; ++i) {
     process(state.sit->currentTime, state.sit->cars[i]);
   }
@@ -23,12 +23,13 @@ void cWorldModel::process(double time, const tCarElt* car)
   const float veloc = car->_speed_x;
   const float accel = car->_accel_x;
   const tTrkLocPos trkPos = car->_trkPos;
-  float yaw = (car->_yaw - RtTrackSideTgAngleL(const_cast<tTrkLocPos*>(&trkPos)));
+  float yaw = car->_yaw - RtTrackSideTgAngleL(const_cast<tTrkLocPos*>(&trkPos));
   NORM_PI_PI(yaw);
   const tTrackSeg* seg = trkPos.seg;
   const float dist = seg->lgfromstart + trkPos.toStart;
-  printf("%lf: %s v=%.2fm/s=%.1fkm/h f=%.2fm/s^2 yaw=%.2frad=%.1fdeg "\
-         "dist=%.0fm\n",
-         time, name, veloc, mps2kmph(veloc), accel, yaw, rad2deg(yaw), dist);
+  printf("%lf: %7s v = %5.2fm/s = %5.1fkm/h f = %6.2fm/s^2 "\
+         "yaw = %5.2frad = %5.1fdeg dist=%.0fm\n",
+         time, name, veloc, mps2kmph(veloc), accel,
+         yaw, rad2deg(yaw), dist);
 }
 
