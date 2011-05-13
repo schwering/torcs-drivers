@@ -22,8 +22,9 @@ void cWorldModel::process(double time, const tCarElt* car)
   const char* name = car->_name;
   const float veloc = car->_speed_x;
   const float accel = car->_accel_x;
-  const float yaw = car->_yaw_rate;
   const tTrkLocPos trkPos = car->_trkPos;
+  float yaw = (car->_yaw - RtTrackSideTgAngleL(const_cast<tTrkLocPos*>(&trkPos)));
+  NORM_PI_PI(yaw);
   const tTrackSeg* seg = trkPos.seg;
   const float dist = seg->lgfromstart + trkPos.toStart;
   printf("%lf: %s v=%.2fm/s=%.1fkm/h f=%.2fm/s^2 yaw=%.2frad=%.1fdeg "\
