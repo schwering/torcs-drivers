@@ -1,0 +1,5 @@
+*.o
+.*.swp
+install
+*.so
+.depend

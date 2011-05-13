@@ -24,18 +24,30 @@ inline float relativeYPos(tCarElt* car)
 
 inline float mps2kmph(float mps)
 {
-  return mps * 3600.0f / 1000.0f;
+  return mps * 3.6f;
 }
 
 inline float kmph2mps(float kmph)
 {
-  return kmph * 1000.0f / 3600.0f;
+  return kmph / 3.6f;
 }
 
 inline float metersInSeconds(const tCarElt* car, float secs)
 {
   const float mps = car->_speed_x;
   return mps * secs;
+}
+
+inline float rad2deg(float rad)
+{
+  const double pi = 3.1415926535897931;
+  return (float)((double) rad / pi * 180.0);
+}
+
+inline float deg2rad(float deg)
+{
+  const double pi = 3.1415926535897931;
+  return (float)((double) deg / 180.0 * pi);
 }
 
 }

@@ -25,13 +25,13 @@ void cSimpleDriver::handle(cDriver& state)
   float desiredRelativeOffsetChange;
   switch (ori) {
     case ORI_LEFT:
-      desiredRelativeOffsetChange = -1.0f * (pos.toLeft - 0.5f) / seg.width;
+      desiredRelativeOffsetChange = -1.0f * (pos.toLeft - 2.0f) / seg.width;
       break;
     case ORI_MIDDLE:
       desiredRelativeOffsetChange = pos.toMiddle / seg.width;
       break;
     case ORI_RIGHT:
-      desiredRelativeOffsetChange = (pos.toRight - 1.0f) / seg.width;
+      desiredRelativeOffsetChange = (pos.toRight - 2.0f) / seg.width;
       break;
   }
   const float midAngle = -1.0f * desiredRelativeOffsetChange;

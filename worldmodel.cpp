@@ -1,0 +1,33 @@
+#include "worldmodel.h"
+
+#include "macros.h"
+#include "util.h"
+
+int cWorldModel::priority() const {
+  return 10000;
+}
+
+void cWorldModel::handle(cDriver& state)
+{
+  static int j = 0;
+  if (++j % 100 != 0) return;
+  for (int i = 0; i < state.sit->_ncars; ++i) {
+    process(state.sit->currentTime, state.sit->cars[i]);
+  }
+  printf("\n");
+}
+
+void cWorldModel::process(double time, const tCarElt* car)
+{
+  const char* name = car->_name;
+  const float veloc = car->_speed_x;
+  const float accel = car->_accel_x;
+  const float yaw = car->_yaw_rate;
+  const tTrkLocPos trkPos = car->_trkPos;
+  const tTrackSeg* seg = trkPos.seg;
+  const float dist = seg->lgfromstart + trkPos.toStart;
+  printf("%lf: %s v=%.2fm/s=%.1fkm/h f=%.2fm/s^2 yaw=%.2frad=%.1fdeg "\
+         "dist=%.0fm\n",
+         time, name, veloc, mps2kmph(veloc), accel, yaw, rad2deg(yaw), dist);
+}
+

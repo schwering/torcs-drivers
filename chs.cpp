@@ -20,6 +20,7 @@
 #include "minithrottle.h"
 #include "simpledriver.h"
 #include "transmission.h"
+#include "worldmodel.h"
 
 #define MAX_BOTS 10
 
@@ -48,14 +49,15 @@ static cDriver& get_driver(int index)
   if (!drivers[index]) {
     drivers[index] = new cDriver();
     drivers[index]->addHandler(new cTransmission());
-    drivers[index]->addHandler(new cMiniThrottle());
     switch (index) {
       case 0:
-        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_RIGHT));
-        printf("NULL\n");
+        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_LEFT));
+        drivers[index]->addHandler(new cMiniThrottle(190.75f));
         break;
       case 1:
-        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_LEFT));
+        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_RIGHT));
+        drivers[index]->addHandler(new cMiniThrottle(200.0f));
+        drivers[index]->addHandler(new cWorldModel());
         break;
       case 2:
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_MIDDLE));
@@ -69,24 +71,16 @@ static cDriver& get_driver(int index)
 }
 
 
-static const char* botname[MAX_BOTS] = {
-  "chs 1", "chs 2", "chs 3", "chs 4", "chs 5",
-  "chs 6", "chs 7", "chs 8", "chs 9", "chs 10"
-};
-
-static const char* botdesc[MAX_BOTS] = {
-  "chs 1", "chs 2", "chs 3", "chs 4", "chs 5",
-  "chs 6", "chs 7", "chs 8", "chs 9", "chs 10"
-};
-
 /* Module entry point */
 extern "C"
 int chs(tModInfo* modInfo)
 {
   memset(modInfo, 0, MAX_BOTS*sizeof(tModInfo));
   for (int i = 0; i < MAX_BOTS; ++i) {
-    modInfo[i].name    = strdup(botname[i]);
-    modInfo[i].desc    = strdup(botdesc[i]);
+    char name[32];
+    sprintf(name, "chs-%d", i);
+    modInfo[i].name    = strdup(name);
+    modInfo[i].desc    = strdup(name);
     modInfo[i].fctInit = initFuncPt;
     modInfo[i].gfId    = ROB_IDENT;
     modInfo[i].index   = i;

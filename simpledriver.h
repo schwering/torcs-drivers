@@ -8,7 +8,7 @@ class cSimpleDriver : public cDriver::cHandler
  public:
   enum eOrientation { ORI_LEFT, ORI_MIDDLE, ORI_RIGHT };
 
-  cSimpleDriver(eOrientation ori = ORI_MIDDLE);
+  explicit cSimpleDriver(eOrientation ori = ORI_MIDDLE);
 
   virtual int priority() const;
   virtual void handle(cDriver& state);
