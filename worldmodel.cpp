@@ -1,5 +1,7 @@
 #include "worldmodel.h"
 
+#include <sys/select.h>
+
 #include "macros.h"
 #include "util.h"
 
@@ -11,7 +13,7 @@ void cWorldModel::handle(cDriver& state)
 {
   for (int i = 0; i < state.sit->_ncars; ++i) {
     const double now = state.sit->currentTime;
-    const tCarElt* car = state.sit->cars[i];
+    tCarElt* car = state.sit->cars[i];
     if (times.find(car->index) == times.end() ||
         now - times[car->index] > 0.5) {
       fireEvents(now, state.sit->cars[i]);
@@ -20,7 +22,7 @@ void cWorldModel::handle(cDriver& state)
   }
 }
 
-void cWorldModel::fireEvents(double time, const tCarElt* car)
+void cWorldModel::fireEvents(double time, tCarElt* car)
 {
   tCarInfo ci;
   ci.name = car->_name;
@@ -31,7 +33,7 @@ void cWorldModel::fireEvents(double time, const tCarElt* car)
   ci.yaw = car->_yaw - RtTrackSideTgAngleL(const_cast<tTrkLocPos*>(&trkPos));
   NORM_PI_PI(ci.yaw);
   const tTrackSeg* seg = trkPos.seg;
-  ci.pos = seg->lgfromstart + trkPos.toStart;
+  ci.pos = RtGetDistFromStart(car);
   ci.offset = -1.0f * trkPos.toMiddle;
 
   for (std::vector<cListener*>::const_iterator it = listeners.begin();
@@ -46,17 +48,43 @@ void cWorldModel::addListener(cWorldModel::cListener* listener)
   listeners.push_back(listener);
 }
 
+
+cWorldModel::cSimplePrologSerializor::cSimplePrologSerializor()
+  : activated(false)
+{
+}
+
 void cWorldModel::cSimplePrologSerializor::process(
     const cWorldModel::tCarInfo& ci)
 {
-  printf("(pos('%s') = %f & "\
-         "offset('%s') = %f & "\
-         "veloc('%s') = %f & "\
-         "yaw('%s') = %f, %lf),\n",
-         ci.name, ci.pos,
-         ci.name, ci.offset,
-         ci.name, ci.veloc,
-         ci.name, ci.yaw,
-         ci.time);
+  if (!activated) {
+    fd_set rfds;
+    FD_ZERO(&rfds);
+    FD_SET(0, &rfds);
+
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 0;
+
+    int retval = select(1, &rfds, NULL, NULL, &tv);
+    if (retval == -1) {
+      perror("select()");
+    } else if (retval) {
+      activated = fgetc(stdin) != EOF;
+    }
+  }
+  if (activated) {
+    printf("(pos('%s') = %f & "\
+           "offset('%s') = %f & "\
+           "veloc('%s') = %f & "\
+           "rad('%s') = %f & " \
+           "deg('%s') = %.0f, %lf),\n",
+           ci.name, ci.pos,
+           ci.name, ci.offset,
+           ci.name, ci.veloc,
+           ci.name, ci.yaw,
+           ci.name, rad2deg(ci.yaw),
+           ci.time);
+  }
 }
 

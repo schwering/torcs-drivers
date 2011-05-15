@@ -10,6 +10,7 @@
 
 #include "trackprofile.h"
 #include "macros.h"
+#include "wrapped_container.h"
 
 #define MAX_HANDLERS 10
 #define REGISTER_HANDLER(HandlerClass) \
@@ -25,6 +26,7 @@ class cDriver {
   class cHandler {
    public:
     inline cHandler() { }
+    virtual ~cHandler() { }
     /** Handlers with highest prio. are executed last. Yes, last. */
     virtual int priority() const = 0;
     virtual void handle(cDriver& state) = 0;
@@ -37,7 +39,7 @@ class cDriver {
   static bool registerHandlerFactory(tfFactory factory);
 
   cDriver();
-  ~cDriver();
+  virtual ~cDriver() {}
 
   void addHandler(cHandler* handler);
 
@@ -62,7 +64,7 @@ class cDriver {
   void drive();
   void endRace();
 
-  std::vector<cHandler*>  handlers;
+  wrapped_container< std::vector<cHandler*> >  handlers;
 };
 
 #endif

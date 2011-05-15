@@ -7,6 +7,7 @@ class cMiniThrottle : public cDriver::cHandler
 {
  public:
   explicit cMiniThrottle(float maxKmph = 50.0);
+  virtual ~cMiniThrottle() {}
 
   virtual int priority() const;
   virtual void handle(cDriver& state);

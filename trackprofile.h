@@ -27,7 +27,7 @@ class cTrackProfile {
   typedef std::vector<cSample>::const_iterator const_iterator;
 
   cTrackProfile();
-  ~cTrackProfile();
+  virtual ~cTrackProfile();
   void init(tTrack* track);
 
   const_iterator begin() const { return samples.begin(); }

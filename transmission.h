@@ -6,6 +6,7 @@
 class cTransmission : public cDriver::cHandler {
  public:
   cTransmission();
+  virtual ~cTransmission() {}
 
   virtual int priority() const;
   virtual void handle(cDriver& state);

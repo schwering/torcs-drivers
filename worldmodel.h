@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "driver.h"
+#include "wrapped_container.h"
 
 class cWorldModel : public cDriver::cHandler
 {
@@ -23,14 +24,21 @@ class cWorldModel : public cDriver::cHandler
   class cListener
   {
    public:
+    virtual ~cListener() {}
     virtual void process(const tCarInfo& carInfo) = 0;
   };
 
   class cSimplePrologSerializor : public cListener
   {
    public:
+    cSimplePrologSerializor();
+    virtual ~cSimplePrologSerializor() {}
     virtual void process(const tCarInfo& ci);
+   private:
+    bool activated;
   };
+
+  virtual ~cWorldModel() {}
 
   virtual int priority() const;
   virtual void handle(cDriver& state);
@@ -38,10 +46,10 @@ class cWorldModel : public cDriver::cHandler
   void addListener(cListener* listener);
 
  private:
-  void fireEvents(double time, const tCarElt* car);
+  void fireEvents(double time, tCarElt* car);
 
   std::map<int, double> times;
-  std::vector<cListener*>  listeners;
+  wrapped_container< std::vector<cListener*> > listeners;
 };
 
 #endif

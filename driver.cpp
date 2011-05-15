@@ -33,10 +33,6 @@ cDriver::cDriver()
   std::sort(handlers.begin(), handlers.end(), &cHandler::hasHigherPriority);
 }
 
-cDriver::~cDriver()
-{
-}
-
 void cDriver::addHandler(cHandler* handler)
 {
   handlers.push_back(handler);

@@ -6,6 +6,8 @@
 class cAntiLockBrakeSystem : public cDriver::cHandler
 {
  public:
+  virtual ~cAntiLockBrakeSystem() {}
+
   virtual int priority() const;
   virtual void handle(cDriver& state);
 
