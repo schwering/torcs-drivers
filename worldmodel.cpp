@@ -33,7 +33,6 @@ void cWorldModel::fireEvents(double time, tCarElt* car)
   ci.yaw = car->_yaw - RtTrackSideTgAngleL(const_cast<tTrkLocPos*>(&trkPos));
   ci.yaw += M_PI / 2; // we use X axis as offset, Y as position in Golog
   NORM_PI_PI(ci.yaw);
-  const tTrackSeg* seg = trkPos.seg;
   ci.pos = RtGetDistFromStart(car);
   ci.offset = trkPos.toMiddle;
   ci.offset *= -1.0f; // we use X axis as offset, Y as position in Golog
@@ -54,11 +53,26 @@ void cWorldModel::addListener(cWorldModel::cListener* listener)
 cWorldModel::cSimplePrologSerializor::cSimplePrologSerializor()
   : activated(false)
 {
+  mouseInfo = GfctrlMouseInit();
+}
+
+cWorldModel::cSimplePrologSerializor::~cSimplePrologSerializor()
+{
+  GfctrlMouseRelease(mouseInfo);
 }
 
 void cWorldModel::cSimplePrologSerializor::process(
     const cWorldModel::tCarInfo& ci)
 {
+  if (!activated) {
+    GfctrlMouseGetCurrent(mouseInfo);
+    if (mouseInfo->button[0] == 1 ||
+        mouseInfo->edgedn[0] == 1 ||
+        mouseInfo->edgeup[0] == 1) {
+      activated = true;
+    }
+  }
+
   if (!activated) {
     fd_set rfds;
     FD_ZERO(&rfds);
@@ -75,13 +89,14 @@ void cWorldModel::cSimplePrologSerializor::process(
       activated = fgetc(stdin) != EOF;
     }
   }
+
   if (activated) {
-    printf("[%lf, "\
+    printf("obs(%lf, ["\
            "pos('%s') = %f, "\
            "offset('%s') = %f, "\
            "veloc('%s') = %f, "\
            "rad('%s') = %f, " \
-           "deg('%s') = %f],\n",
+           "deg('%s') = %f]).\n",
            ci.time,
            ci.name, ci.pos,
            ci.name, ci.offset,

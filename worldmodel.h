@@ -4,6 +4,8 @@
 #include <map>
 #include <vector>
 
+#include <tgfclient.h>
+
 #include "driver.h"
 #include "wrapped_container.h"
 
@@ -32,10 +34,11 @@ class cWorldModel : public cDriver::cHandler
   {
    public:
     cSimplePrologSerializor();
-    virtual ~cSimplePrologSerializor() {}
+    virtual ~cSimplePrologSerializor();
     virtual void process(const tCarInfo& ci);
    private:
     bool activated;
+    tCtrlMouseInfo* mouseInfo;
   };
 
   virtual ~cWorldModel() {}
