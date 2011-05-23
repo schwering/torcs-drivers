@@ -9,11 +9,13 @@
 
 #include "macros.h"
 
-class cTrackProfile {
+class cTrackProfile
+{
  public:
   typedef v2t<float> cVector;
 
-  class cSample : public cVector {
+  class cSample : public cVector
+  {
    public:
     cSample() : space(0.0f) { }
     cSample(const cVector& v, float space)

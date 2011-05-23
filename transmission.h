@@ -3,7 +3,8 @@
 
 #include "driver.h"
 
-class cTransmission : public cDriver::cHandler {
+class cTransmission : public cDriver::cHandler
+{
  public:
   cTransmission();
   virtual ~cTransmission() {}

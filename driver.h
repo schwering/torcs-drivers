@@ -21,9 +21,11 @@
       bool registered = cDriver::registerHandlerFactory(factory);\
     }
 
-class cDriver {
+class cDriver
+{
  public:
-  class cHandler {
+  class cHandler
+  {
    public:
     inline cHandler() { }
     virtual ~cHandler() { }
