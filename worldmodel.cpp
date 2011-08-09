@@ -31,11 +31,11 @@ void cWorldModel::fireEvents(double time, tCarElt* car)
   ci.accel = car->_accel_x;
   const tTrkLocPos trkPos = car->_trkPos;
   ci.yaw = car->_yaw - RtTrackSideTgAngleL(const_cast<tTrkLocPos*>(&trkPos));
-  ci.yaw += M_PI / 2; // we use X axis as offset, Y as position in Golog
+  //ci.yaw += M_PI / 2; // we use X axis as offset, Y as position in Golog
   NORM_PI_PI(ci.yaw);
   ci.pos = RtGetDistFromStart(car);
   ci.offset = trkPos.toMiddle;
-  ci.offset *= -1.0f; // we use X axis as offset, Y as position in Golog
+  //ci.offset *= -1.0f; // we use X axis as offset, Y as position in Golog
 
   for (std::vector<cListener*>::const_iterator it = listeners.begin();
        it != listeners.end(); ++it) {
@@ -91,6 +91,10 @@ void cWorldModel::cSimplePrologSerializor::process(
   }
 
   if (activated) {
+    if (!strcmp("human", ci.name) && abs(rad2deg(ci.yaw)) > 1.5)
+      printf("observe(%2.5lf, deg('%s') = %2.2lf);\n",
+             ci.time, ci.name, rad2deg(ci.yaw));
+#if 0
     printf("obs(%lf, ["\
            "pos('%s') = %f, "\
            "offset('%s') = %f, "\
@@ -103,6 +107,7 @@ void cWorldModel::cSimplePrologSerializor::process(
            ci.name, ci.veloc,
            ci.name, ci.yaw,
            ci.name, rad2deg(ci.yaw));
+#endif
   }
 }
 
