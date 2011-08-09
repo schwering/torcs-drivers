@@ -190,7 +190,7 @@ GfImgReadPng(const char *filename, int *widthp, int *heightp, float screen_gamma
 }
 
 
-/** Write a raw buffer to a file on disk.
+/** Write a PNM buffer to a file on disk.
     @ingroup	img
     @param	img		image data (RGB)
     @param	filename	filename of the png file
@@ -200,7 +200,7 @@ GfImgReadPng(const char *filename, int *widthp, int *heightp, float screen_gamma
 		<br>-1 Error
  */
 int
-GfImgWritePpm(const unsigned char *img, const char *filename, size_t width, size_t height)
+GfImgWritePnm(const unsigned char *img, const char *filename, size_t width, size_t height)
 {
   const char *magic = "P6";
   const int depth = 255;

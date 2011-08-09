@@ -39,7 +39,7 @@ extern void GfInitClient(void);
  ********************/
 
 extern unsigned char *GfImgReadPng(const char *filename, int *widthp, int *heightp, float gamma);
-extern int GfImgWritePpm(const unsigned char *img, const char *filename, size_t width, size_t height);
+extern int GfImgWritePnm(const unsigned char *img, const char *filename, size_t width, size_t height);
 extern int GfImgWritePng(unsigned char *img, const char *filename, int width, int height);
 extern void GfImgFreeTex(GLuint tex);
 extern GLuint GfImgReadTex(char *filename);
