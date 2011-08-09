@@ -1,0 +1,10 @@
+495d494
+< 
+912a912,918
+>         const tdble Vmax = 80.0f / 3.6f;
+>         if (car->_speed_x > Vmax) {
+>           const tdble Dv = Vmax - car->_speed_x;
+>           car->_brakeCmd = MAX(car->_brakeCmd, fabs(Dv/5.0));
+>           car->_accelCmd = 0;
+>         }
+> 
