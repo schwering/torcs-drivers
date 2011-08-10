@@ -11,7 +11,7 @@ do
 done
 
 echo "Creating video."
-mencoder mf://${dir}/*.png -mf w=800:h=600:fps=25:type=png -ovc lavc -lavcopts vcodec=mpeg4 -oac copy -o ${dir}/output.avi || exit
+mencoder mf://${dir}/*.png -mf w=800:h=600:fps=12.5:type=png -ovc lavc -lavcopts vcodec=mpeg4 -oac copy -o ${dir}/output.avi || exit
 
 mplayer ${dir}/output.avi || exit
 

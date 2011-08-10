@@ -200,11 +200,13 @@ GfImgReadPng(const char *filename, int *widthp, int *heightp, float screen_gamma
 		<br>-1 Error
  */
 int
-GfImgWritePnm(const unsigned char *img, const char *filename, size_t width, size_t height)
+GfImgWritePnm(const unsigned char *img,
+              const char *filename,
+              size_t width,
+              size_t height)
 {
   const char *magic = "P6";
   const int depth = 255;
-  const size_t rowbytes = width * 3;
   char buf[64];
   size_t len, written;
 
@@ -229,6 +231,7 @@ GfImgWritePnm(const unsigned char *img, const char *filename, size_t width, size
   written = fwrite(buf, sizeof(char), len, fp);
   assert(written == len);
 
+  const size_t rowbytes = width * 3;
   const unsigned char *row = img + (height - 1) * rowbytes;
   for (size_t i = 0; i < height; ++i, row -= rowbytes) {
     written = fwrite(row, sizeof(char), (size_t) rowbytes, fp);

@@ -2,6 +2,8 @@
 
 #include <sys/select.h>
 
+#include <raceinit.h>
+
 #include "macros.h"
 #include "util.h"
 
@@ -69,6 +71,7 @@ void cWorldModel::cSimplePrologSerializor::process(
     if (mouseInfo->button[0] == 1 ||
         mouseInfo->edgedn[0] == 1 ||
         mouseInfo->edgeup[0] == 1) {
+      ReMovieCapture();
       activated = true;
     }
   }
@@ -91,10 +94,11 @@ void cWorldModel::cSimplePrologSerializor::process(
   }
 
   if (activated) {
-    if (!strcmp("human", ci.name) && abs(rad2deg(ci.yaw)) > 1.5)
+#if 1
+    if (!strcmp("Player", ci.name) && abs(rad2deg(ci.yaw)) >= 0.0)
       printf("observe(%2.5lf, deg('%s') = %2.2lf);\n",
              ci.time, ci.name, rad2deg(ci.yaw));
-#if 0
+#else
     printf("obs(%lf, ["\
            "pos('%s') = %f, "\
            "offset('%s') = %f, "\
