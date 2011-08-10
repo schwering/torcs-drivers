@@ -94,7 +94,7 @@ void cWorldModel::cSimplePrologSerializor::process(
   }
 
   if (activated) {
-#if 1
+#if 0
     if (!strcmp("Player", ci.name) && abs(rad2deg(ci.yaw)) >= 0.0)
       printf("observe(%2.5lf, deg('%s') = %2.2lf);\n",
              ci.time, ci.name, rad2deg(ci.yaw));
