@@ -2,9 +2,9 @@
 
     file        : racegl.cpp
     created     : Sat Nov 16 18:22:00 CET 2002
-    copyright   : (C) 2002 by Eric Espié                        
+    copyright   : (C) 2002 by Eric Espiï¿½                        
     email       : eric.espie@torcs.org   
-    version     : $Id: racegl.cpp,v 1.7 2004/04/05 18:25:00 olethros Exp $                                  
+    version     : $Id: racegl.cpp,v 1.7.2.1 2008/12/31 03:53:55 berniw Exp $                                  
 
  ***************************************************************************/
 
@@ -20,7 +20,7 @@
 /** @file   
     		
     @author	<a href=mailto:eric.espie@torcs.org>Eric Espie</a>
-    @version	$Id: racegl.cpp,v 1.7 2004/04/05 18:25:00 olethros Exp $
+    @version	$Id: racegl.cpp,v 1.7.2.1 2008/12/31 03:53:55 berniw Exp $
 */
 #include <stdlib.h>
 #include <stdio.h>
@@ -110,13 +110,13 @@ reMovieCapture(void * /* dummy */)
     }
 
 }
-
 // XXX:chs Made public so that bot can start movie capture.
 void
 ReMovieCapture(void)
 {
   reMovieCapture(NULL);
 }
+
 
 
 
@@ -143,33 +143,35 @@ reAddKeys(void)
 
 
 void
-ReSetRaceMsg(char *msg)
+ReSetRaceMsg(const char *msg)
 {
-    static char *curMsg = 0;
-
-    if (curMsg) free(curMsg);
-    if (msg) {
-	curMsg = strdup(msg);
-	GfuiLabelSetText(reScreenHandle, reMsgId, curMsg);
-    } else {
-	curMsg = 0;
-	GfuiLabelSetText(reScreenHandle, reMsgId, "");
-    }
+      static char *curMsg = 0;
+      
+      if (curMsg) free(curMsg);
+      
+      if (msg) {
+          curMsg = strdup(msg);
+          GfuiLabelSetText(reScreenHandle, reMsgId, curMsg);
+      } else {
+              curMsg = 0;
+              GfuiLabelSetText(reScreenHandle, reMsgId, "");
+      }
 }
 
 void
-ReSetRaceBigMsg(char *msg)
+ReSetRaceBigMsg(const char *msg)
 {
-    static char *curMsg = 0;
-    
-    if (curMsg) free(curMsg);
-    if (msg) {
-	curMsg = strdup(msg);
-	GfuiLabelSetText(reScreenHandle, reBigMsgId, curMsg);
-    } else {
-	curMsg = 0;
-	GfuiLabelSetText(reScreenHandle, reBigMsgId, "");
-    }
+	static char *curMsg = 0;
+	
+	if (curMsg) free(curMsg);
+
+	if (msg) {
+		curMsg = strdup(msg);
+		GfuiLabelSetText(reScreenHandle, reBigMsgId, curMsg);
+	} else {
+		curMsg = 0;
+		GfuiLabelSetText(reScreenHandle, reBigMsgId, "");
+	}
 }
 
 void *
@@ -315,49 +317,48 @@ reResScreenShutdown(void * /* dummy */)
 void *
 ReResScreenInit(void)
 {
-    int		i;
-    int		y, dy;
-    char	*img;
-    static char	*title[3] = {"Practice", "Qualifications", "Race"};
-
-    if (reResScreenHdle) {
-	GfuiScreenRelease(reResScreenHdle);
-    }
-
-    reResScreenHdle = GfuiScreenCreateEx(bgcolor, 0, reResScreenActivate, 0, reResScreenShutdown, 0);
-
-    GfuiTitleCreate(reResScreenHdle, title[ReInfo->s->_raceType], strlen(title[ReInfo->s->_raceType]));
-
-    img = GfParmGetStr(ReInfo->params, RM_SECT_HEADER, RM_ATTR_RUNIMG, 0);
-    if (img) {
-	GfuiScreenAddBgImg(reResScreenHdle, img);
-    }
-    
-    reAddResKeys();
-
-    reResTitleId = GfuiLabelCreateEx(reResScreenHdle,
-				     "",
-				     red,
-				     GFUI_FONT_LARGE_C,
-				     320, 420,
-				     GFUI_ALIGN_HC_VB, 50);
-
-    y = 400;
-    dy = 378 / LINES;
-    for (i = 0; i < LINES; i++) {
-	FREEZ(reResMsg[i]);
-	reResMsgClr[i] = 0;
-	reResMsgId[i] = GfuiLabelCreateEx(reResScreenHdle,
-					  "",
-					  white,
-					  GFUI_FONT_MEDIUM_C,
-					  20, y, 
-					  GFUI_ALIGN_HL_VB, 120);
-	y -= dy;
-    }
-
-    reCurLine = 0;
-    return reResScreenHdle;
+	int i;
+	int y, dy;
+	static const char *title[3] = {"Practice", "Qualifications", "Race"};
+	
+	if (reResScreenHdle) {
+		GfuiScreenRelease(reResScreenHdle);
+	}
+	
+	reResScreenHdle = GfuiScreenCreateEx(bgcolor, 0, reResScreenActivate, 0, reResScreenShutdown, 0);
+	
+	GfuiTitleCreate(reResScreenHdle, title[ReInfo->s->_raceType], strlen(title[ReInfo->s->_raceType]));
+	
+	const char* img = GfParmGetStr(ReInfo->params, RM_SECT_HEADER, RM_ATTR_RUNIMG, 0);
+	if (img) {
+		GfuiScreenAddBgImg(reResScreenHdle, img);
+	}
+	
+	reAddResKeys();
+	
+	reResTitleId = GfuiLabelCreateEx(reResScreenHdle,
+						"",
+						red,
+						GFUI_FONT_LARGE_C,
+						320, 420,
+						GFUI_ALIGN_HC_VB, 50);
+	
+	y = 400;
+	dy = 378 / LINES;
+	for (i = 0; i < LINES; i++) {
+		FREEZ(reResMsg[i]);
+		reResMsgClr[i] = 0;
+		reResMsgId[i] = GfuiLabelCreateEx(reResScreenHdle,
+							"",
+							white,
+							GFUI_FONT_MEDIUM_C,
+							20, y, 
+							GFUI_ALIGN_HL_VB, 120);
+		y -= dy;
+	}
+	
+	reCurLine = 0;
+	return reResScreenHdle;
 }
 
 void
@@ -387,19 +388,19 @@ ReResScreenAddText(char *text)
 }
 
 void
-ReResScreenSetText(char *text, int line, int clr)
+ReResScreenSetText(const char *text, int line, int clr)
 {
-    if (line < LINES) {
-	FREEZ(reResMsg[line]);
-	reResMsg[line] = strdup(text);
-	if ((clr >= 0) && (clr < 2)) {
-	    reResMsgClr[line] = clr;
-	} else {
-	    reResMsgClr[line] = 0;
+	if (line < LINES) {
+		FREEZ(reResMsg[line]);
+		reResMsg[line] = strdup(text);
+		if ((clr >= 0) && (clr < 2)) {
+			reResMsgClr[line] = clr;
+		} else {
+			reResMsgClr[line] = 0;
+		}
+		GfuiLabelSetText(reResScreenHdle, reResMsgId[line], reResMsg[line]);
+		GfuiLabelSetColor(reResScreenHdle, reResMsgId[line], reColor[reResMsgClr[line]]);
 	}
-	GfuiLabelSetText(reResScreenHdle, reResMsgId[line], reResMsg[line]);
-	GfuiLabelSetColor(reResScreenHdle, reResMsgId[line], reColor[reResMsgClr[line]]);
-    }
 }
 
 int
@@ -411,11 +412,11 @@ ReResGetLines(void)
 void
 ReResEraseScreen(void)
 {
-    int i;
-
-    for (i = 0; i < LINES; i++) {
-	ReResScreenSetText("", i, 0);
-    }
+	int i;
+	
+	for (i = 0; i < LINES; i++) {
+		ReResScreenSetText("", i, 0);
+	}
 }
 
 

@@ -30,13 +30,13 @@ extern void *ReScreenInit(void);
 extern void  ReScreenShutdown(void);
 extern void *ReHookInit(void);
 extern void ReHookShutdown(void);
-extern void ReSetRaceMsg(char *msg);
-extern void ReSetRaceBigMsg(char *msg);
+extern void ReSetRaceMsg(const char *msg);
+extern void ReSetRaceBigMsg(const char *msg);
 
 extern void *ReResScreenInit(void);
 extern void ReResScreenSetTitle(char *title);
 extern void ReResScreenAddText(char *text);
-extern void ReResScreenSetText(char *text, int line, int clr);
+extern void ReResScreenSetText(const char *text, int line, int clr);
 extern void ReResScreenRemoveText(int line);
 extern void ReResShowCont(void);
 extern int  ReResGetLines(void);
