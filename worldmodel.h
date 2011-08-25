@@ -43,6 +43,24 @@ class cWorldModel : public cDriver::cHandler
     tCtrlMouseInfo* mouseInfo;
   };
 
+  class cOffsetSerializor : public cListener
+  {
+   public:
+    explicit cOffsetSerializor(const char *name);
+    virtual ~cOffsetSerializor();
+    virtual void process(const tCarInfo& ci);
+    virtual float interval() const;
+   private:
+    static const int WIDTH = 1024;
+    static const int HEIGHT = 1024;
+    static const int MAX_OFFSET = 5;
+    static const unsigned char BG = 255;
+    static const unsigned char FG = 0;
+    FILE *fp;
+    unsigned char *buf;
+    int row;
+  };
+
   class cGraphicDisplay : public cListener
   {
    public:

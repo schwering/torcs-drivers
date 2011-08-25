@@ -16,8 +16,8 @@ void cWorldModel::handle(cDriver& state)
 {
   for (int i = 0; i < state.sit->_ncars; ++i) {
     const double now = state.sit->currentTime;
-    tCarElt* car = state.sit->cars[i];
     /*
+    tCarElt* car = state.sit->cars[i];
     if (times.find(car->index) == times.end() ||
         now - times[car->index] > 0.5) {
       fireEvents(now, state.sit->cars[i]);
@@ -125,6 +125,72 @@ void cWorldModel::cSimplePrologSerializor::process(
 float cWorldModel::cSimplePrologSerializor::interval() const
 {
   return 0.5f;
+}
+
+cWorldModel::cOffsetSerializor::cOffsetSerializor(const char *name)
+  : fp((name) ? fopen(name, "wb") : NULL),
+    row(0)
+{
+  if (fp) {
+    const char *magic = "P6";
+    const int depth = 255;
+    char str[64];
+    size_t len, written;
+
+    sprintf(str, "%s\n", magic);
+    len = strlen(str);
+    written = fwrite(str, sizeof(char), len, fp);
+    assert(written == len);
+
+    sprintf(str, "%d %d\n", WIDTH, HEIGHT);
+    len = strlen(str);
+    written = fwrite(str, sizeof(char), len, fp);
+    assert(written == len);
+
+    sprintf(str, "%d\n", depth);
+    len = strlen(str);
+    written = fwrite(str, sizeof(char), len, fp);
+    assert(written == len);
+
+    buf = new unsigned char[3 * WIDTH];
+    memset(buf, BG, 3 * WIDTH);
+  }
+}
+
+cWorldModel::cOffsetSerializor::~cOffsetSerializor()
+{
+  if (fp) {
+    fclose(fp);
+    delete[] buf;
+  }
+}
+
+void cWorldModel::cOffsetSerializor::process(
+    const cWorldModel::tCarInfo& ci)
+{
+  if (fp) {
+    if (!strcmp("Player", ci.name) || !strcmp("human", ci.name)) {
+      if (mps2kmph(ci.veloc) > 50 && (++row) < HEIGHT) {
+        const float offset = MIN(MAX_OFFSET, MAX(-1.0 * MAX_OFFSET, ci.offset));
+        const int scaled_offset = static_cast<int>(offset * WIDTH / 2 / 10);
+        const int pixel = WIDTH / 2 + scaled_offset;
+        const size_t rowbytes = (size_t) WIDTH * 3;
+        buf[pixel * 3 + 0] = FG;
+        buf[pixel * 3 + 1] = FG;
+        buf[pixel * 3 + 2] = FG;
+        size_t written = fwrite(buf, sizeof(char), rowbytes, fp);
+        assert(written == rowbytes);
+        buf[pixel * 3 + 0] = BG;
+        buf[pixel * 3 + 1] = BG;
+        buf[pixel * 3 + 2] = BG;
+      }
+    }
+  }
+}
+
+float cWorldModel::cOffsetSerializor::interval() const
+{
+  return 0.0f;
 }
 
 cWorldModel::cGraphicDisplay::cGraphicDisplay()
