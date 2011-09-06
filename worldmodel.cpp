@@ -128,9 +128,24 @@ float cWorldModel::cSimplePrologSerializor::interval() const
 }
 
 cWorldModel::cOffsetSerializor::cOffsetSerializor(const char *name)
-  : fp((name) ? fopen(name, "wb") : NULL),
+  : fp(NULL),
     row(0)
 {
+  char *new_name = new char[strlen(name) + 32];
+  bool found = false;
+  for (int i = 0; i < 1024 && !found; ++i) {
+    sprintf(new_name, "%s-%d", name, i);
+    FILE *test = fopen(new_name, "r");
+    found = test == NULL;
+    if (test) fclose(test);
+  }
+  if (found) {
+    fp = fopen(new_name, "w");
+  } else {
+    fp = NULL;
+  }
+  delete[] new_name;
+
   if (fp) {
     const char *magic = "P6";
     const int depth = 255;
