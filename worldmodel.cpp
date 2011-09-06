@@ -127,6 +127,17 @@ float cWorldModel::cSimplePrologSerializor::interval() const
   return 0.5f;
 }
 
+namespace {
+bool exists(const char *name) {
+  FILE *fp = fopen(name, "r");
+  bool exists = fp != NULL;
+  if (fp) {
+    fclose(fp);
+  }
+  return exists;
+}
+}
+
 cWorldModel::cOffsetSerializor::cOffsetSerializor(const char *name)
   : fp(NULL),
     row(0)
@@ -134,10 +145,8 @@ cWorldModel::cOffsetSerializor::cOffsetSerializor(const char *name)
   char *new_name = new char[strlen(name) + 32];
   bool found = false;
   for (int i = 0; i < 1024 && !found; ++i) {
-    sprintf(new_name, "%s-%d", name, i);
-    FILE *test = fopen(new_name, "r");
-    found = test == NULL;
-    if (test) fclose(test);
+    sprintf(new_name, "%s-%d.pnm", name, i);
+    found = !exists(new_name);
   }
   if (found) {
     fp = fopen(new_name, "w");
