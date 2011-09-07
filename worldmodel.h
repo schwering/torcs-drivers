@@ -61,7 +61,7 @@ class cWorldModel : public cDriver::cHandler
    private:
     static const int WIDTH = 1024;
     static const int HEIGHT = 4096;
-    static const int MAX_OFFSET = 5;
+    static const int MAX_OFFSET = 7;
     static const unsigned char BG = 255;
     static const unsigned char FG = 0;
 

@@ -101,6 +101,7 @@ void cWorldModel::cSimplePrologSerializor::process(
     }
   }
 
+  activated = activated || mps2kmph(ci.veloc) > 50;
   if (activated) {
 #if 0
     if (!strcmp("Player", ci.name) && abs(rad2deg(ci.yaw)) >= 0.0)
