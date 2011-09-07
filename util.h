@@ -2,6 +2,8 @@
 #define utilH
 
 #include <assert.h>
+#include <stdio.h>
+#include <string.h>
 
 #include <robottools.h>
 
@@ -48,6 +50,27 @@ inline float deg2rad(float deg)
 {
   const double pi = 3.1415926535897931;
   return (float)((double) deg / 180.0 * pi);
+}
+
+inline bool exists(const char *name) {
+  FILE *fp = fopen(name, "r");
+  bool exists = fp != NULL;
+  if (fp) {
+    fclose(fp);
+  }
+  return exists;
+}
+
+inline FILE *fopen_next(const char *name, const char *extension) {
+  char *new_name = new char[strlen(name) + strlen(extension) + 32];
+  bool found = false;
+  for (int i = 0; i < 1024 && !found; ++i) {
+    sprintf(new_name, "%s-%d.%s", name, i, extension);
+    found = !exists(new_name);
+  }
+  FILE *fp = (found) ? fopen(new_name, "w") : NULL;
+  delete[] new_name;
+  return fp;
 }
 
 }

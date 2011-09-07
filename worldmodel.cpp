@@ -59,8 +59,9 @@ void cWorldModel::addListener(cWorldModel::cListener* listener)
 }
 
 
-cWorldModel::cSimplePrologSerializor::cSimplePrologSerializor()
-  : activated(false)
+cWorldModel::cSimplePrologSerializor::cSimplePrologSerializor(const char *name)
+  : fp(fopen_next(name, "ecl")),
+    activated(false)
 {
   mouseInfo = GfctrlMouseInit();
 }
@@ -103,21 +104,23 @@ void cWorldModel::cSimplePrologSerializor::process(
   if (activated) {
 #if 0
     if (!strcmp("Player", ci.name) && abs(rad2deg(ci.yaw)) >= 0.0)
-      printf("observe(%2.5lf, deg('%s') = %2.2lf);\n",
-             ci.time, ci.name, rad2deg(ci.yaw));
+      fprintf(fp,
+              "observe(%2.5lf, deg('%s') = %2.2lf);\n",
+              ci.time, ci.name, rad2deg(ci.yaw));
 #else
-    printf("obs(%lf, ["\
-           "pos('%s') = %f, "\
-           "offset('%s') = %f, "\
-           "veloc('%s') = %f, "\
-           "rad('%s') = %f, " \
-           "deg('%s') = %f]).\n",
-           ci.time,
-           ci.name, ci.pos,
-           ci.name, ci.offset,
-           ci.name, ci.veloc,
-           ci.name, ci.yaw,
-           ci.name, rad2deg(ci.yaw));
+    fprintf(fp,
+            "obs(%lf, ["\
+            "pos('%s') = %f, "\
+            "offset('%s') = %f, "\
+            "veloc('%s') = %f, "\
+            "rad('%s') = %f, " \
+            "deg('%s') = %f]).\n",
+            ci.time,
+            ci.name, ci.pos,
+            ci.name, ci.offset,
+            ci.name, ci.veloc,
+            ci.name, ci.yaw,
+            ci.name, rad2deg(ci.yaw));
 #endif
   }
 }
@@ -127,87 +130,36 @@ float cWorldModel::cSimplePrologSerializor::interval() const
   return 0.5f;
 }
 
-namespace {
-bool exists(const char *name) {
-  FILE *fp = fopen(name, "r");
-  bool exists = fp != NULL;
-  if (fp) {
-    fclose(fp);
-  }
-  return exists;
-}
-}
-
 cWorldModel::cOffsetSerializor::cOffsetSerializor(const char *name)
-  : fp(NULL),
+  : img(name, WIDTH, HEIGHT),
     row(0)
 {
-  char *new_name = new char[strlen(name) + 32];
-  bool found = false;
-  for (int i = 0; i < 1024 && !found; ++i) {
-    sprintf(new_name, "%s-%d.pnm", name, i);
-    found = !exists(new_name);
-  }
-  if (found) {
-    fp = fopen(new_name, "w");
-  } else {
-    fp = NULL;
-  }
-  delete[] new_name;
-
-  if (fp) {
-    const char *magic = "P6";
-    const int depth = 255;
-    char str[64];
-    size_t len, written;
-
-    sprintf(str, "%s\n", magic);
-    len = strlen(str);
-    written = fwrite(str, sizeof(char), len, fp);
-    assert(written == len);
-
-    sprintf(str, "%d %d\n", WIDTH, HEIGHT);
-    len = strlen(str);
-    written = fwrite(str, sizeof(char), len, fp);
-    assert(written == len);
-
-    sprintf(str, "%d\n", depth);
-    len = strlen(str);
-    written = fwrite(str, sizeof(char), len, fp);
-    assert(written == len);
-
-    buf = new unsigned char[3 * WIDTH];
-    memset(buf, BG, 3 * WIDTH);
-  }
-}
-
-cWorldModel::cOffsetSerializor::~cOffsetSerializor()
-{
-  if (fp) {
-    fclose(fp);
-    delete[] buf;
+  const int middle_of_the_street = WIDTH / 2;
+  const int mark_diff = 15;
+  const int mark_width = 4;
+  bool line_mark = false;
+  for (int row = 0; row < HEIGHT; ++row) {
+    if (line_mark) {
+      for (int i = -1 * mark_width / 2; i <= mark_diff / 2; ++i) {
+        img.set_pixel(middle_of_the_street + i, row, tColor::GRAY);
+      }
+    }
+    if (row % mark_diff == 0) {
+      line_mark = !line_mark;
+    }
   }
 }
 
 void cWorldModel::cOffsetSerializor::process(
     const cWorldModel::tCarInfo& ci)
 {
-  if (fp) {
-    if (!strcmp("Player", ci.name) || !strcmp("human", ci.name)) {
-      if (mps2kmph(ci.veloc) > 50 && (++row) < HEIGHT) {
-        const float offset = MIN(MAX_OFFSET, MAX(-1.0 * MAX_OFFSET, ci.offset));
-        const int scaled_offset = static_cast<int>(offset * WIDTH / 2 / 10);
-        const int pixel = WIDTH / 2 + scaled_offset;
-        const size_t rowbytes = (size_t) WIDTH * 3;
-        buf[pixel * 3 + 0] = FG;
-        buf[pixel * 3 + 1] = FG;
-        buf[pixel * 3 + 2] = FG;
-        size_t written = fwrite(buf, sizeof(char), rowbytes, fp);
-        assert(written == rowbytes);
-        buf[pixel * 3 + 0] = BG;
-        buf[pixel * 3 + 1] = BG;
-        buf[pixel * 3 + 2] = BG;
-      }
+  if (!strcmp("Player", ci.name) || !strcmp("human", ci.name)) {
+    if (mps2kmph(ci.veloc) > 50 && row < HEIGHT) {
+      const float offset = MIN(MAX_OFFSET, MAX(-1.0 * MAX_OFFSET, ci.offset));
+      const int scaled_offset = static_cast<int>(offset * WIDTH / 2 / 10);
+      const int pixel = WIDTH / 2 + scaled_offset;
+      img.set_pixel(pixel, row, tColor::BLACK);
+      ++row;
     }
   }
 }

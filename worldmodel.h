@@ -7,6 +7,8 @@
 #include <tgfclient.h>
 
 #include "driver.h"
+#include "macros.h"
+#include "pnmimage.h"
 #include "wrapped_container.h"
 
 class cWorldModel : public cDriver::cHandler
@@ -26,19 +28,25 @@ class cWorldModel : public cDriver::cHandler
   class cListener
   {
    public:
+    cListener() {}
     virtual ~cListener() {}
     virtual void process(const tCarInfo& carInfo) = 0;
     virtual float interval() const = 0;
+
+   private:
+    DISALLOW_COPY_AND_ASSIGN(cListener);
   };
 
   class cSimplePrologSerializor : public cListener
   {
    public:
-    cSimplePrologSerializor();
+    explicit cSimplePrologSerializor(const char *name);
     virtual ~cSimplePrologSerializor();
     virtual void process(const tCarInfo& ci);
     virtual float interval() const;
+
    private:
+    FILE *fp;
     bool activated;
     tCtrlMouseInfo* mouseInfo;
   };
@@ -47,17 +55,17 @@ class cWorldModel : public cDriver::cHandler
   {
    public:
     explicit cOffsetSerializor(const char *name);
-    virtual ~cOffsetSerializor();
     virtual void process(const tCarInfo& ci);
     virtual float interval() const;
+
    private:
     static const int WIDTH = 1024;
-    static const int HEIGHT = 1024;
+    static const int HEIGHT = 4096;
     static const int MAX_OFFSET = 5;
     static const unsigned char BG = 255;
     static const unsigned char FG = 0;
-    FILE *fp;
-    unsigned char *buf;
+
+    cPnmImage img;
     int row;
   };
 

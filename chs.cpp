@@ -59,9 +59,9 @@ static cDriver& get_driver(int index)
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_RIGHT));
         drivers[index]->addHandler(new cMiniThrottle(60.0f));
         cWorldModel* wm = new cWorldModel();
-        wm->addListener(new cWorldModel::cSimplePrologSerializor());
+        wm->addListener(new cWorldModel::cSimplePrologSerializor("/home/chs/Desktop/prolog"));
         wm->addListener(new cWorldModel::cOffsetSerializor("/home/chs/Desktop/offset"));
-        wm->addListener(new cWorldModel::cGraphicDisplay());
+        //wm->addListener(new cWorldModel::cGraphicDisplay());
         drivers[index]->addHandler(wm);
         break;
       }
