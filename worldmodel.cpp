@@ -43,12 +43,14 @@ void cWorldModel::fireEvents(double now, tCarElt* car)
   ci.offset = trkPos.toMiddle;
   //ci.offset *= -1.0f; // we use X axis as offset, Y as position in Golog
 
-  for (std::vector<cListener*>::const_iterator it = listeners.begin();
-       it != listeners.end(); ++it) {
-    cListener* listener = *it;
-    if (times.find(car->index) == times.end() ||
-        now - times[car->index] > listener->interval()) {
+  for (size_t i = 0; i < listeners.size(); ++i) {
+    cListener* listener = listeners[i];
+    const std::pair<int, int> key = std::make_pair(car->index, i);
+    const std::map<std::pair<int, int>, double>::const_iterator jt =
+        times.find(key);
+    if (jt == times.end() || now - jt->second > listener->interval()) {
       listener->process(ci);
+      times[key] = now;
     }
   }
 }
@@ -109,19 +111,22 @@ void cWorldModel::cSimplePrologSerializor::process(
               "observe(%2.5lf, deg('%s') = %2.2lf);\n",
               ci.time, ci.name, rad2deg(ci.yaw));
 #else
-    fprintf(fp,
-            "obs(%lf, ["\
-            "pos('%s') = %f, "\
-            "offset('%s') = %f, "\
-            "veloc('%s') = %f, "\
-            "rad('%s') = %f, " \
-            "deg('%s') = %f]).\n",
-            ci.time,
-            ci.name, ci.pos,
-            ci.name, ci.offset,
-            ci.name, ci.veloc,
-            ci.name, ci.yaw,
-            ci.name, rad2deg(ci.yaw));
+    FILE *fps[] = { stdout, fp };
+    for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
+      fprintf(fps[i],
+              "obs(%lf, ["\
+              "pos('%s') = %f, "\
+              "offset('%s') = %f, "\
+              "veloc('%s') = %f, "\
+              "rad('%s') = %f, " \
+              "deg('%s') = %f]).\n",
+              ci.time,
+              ci.name, ci.pos,
+              ci.name, ci.offset,
+              ci.name, ci.veloc,
+              ci.name, ci.yaw,
+              ci.name, rad2deg(ci.yaw));
+    }
 #endif
   }
 }

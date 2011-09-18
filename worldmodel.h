@@ -97,7 +97,7 @@ class cWorldModel : public cDriver::cHandler
  private:
   void fireEvents(double time, tCarElt* car);
 
-  std::map<int, double> times;
+  std::map<std::pair<int, int>, double> times;
   wrapped_container< std::vector<cListener*> > listeners;
 };
 
