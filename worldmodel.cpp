@@ -126,6 +126,7 @@ void cWorldModel::cSimplePrologSerializor::process(
               ci.name, ci.veloc,
               ci.name, ci.yaw,
               ci.name, rad2deg(ci.yaw));
+      fflush(fps[i]);
     }
 #endif
   }

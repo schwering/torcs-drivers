@@ -93,9 +93,6 @@ int chs(tModInfo* modInfo)
     modInfo[i].gfId    = ROB_IDENT;
     modInfo[i].index   = i;
   }
-  for (int i = 0; i < MAX_BOTS; ++i) {
-    printf("bot '%s' / '%s' / %d\n", modInfo[i].name, modInfo[i].desc, modInfo[i].index);
-  }
   return 0;
 }
 
