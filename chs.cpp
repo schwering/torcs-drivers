@@ -60,8 +60,8 @@ static cDriver& get_driver(int index)
         drivers[index]->addHandler(new cMiniThrottle(60.0f));
         cWorldModel* wm = new cWorldModel();
         wm->addListener(new cWorldModel::cSimplePrologSerializor("/home/chs/Desktop/torcs/prolog"));
-        wm->addListener(new cWorldModel::cOffsetSerializor("/home/chs/Desktop/torcs/offset"));
-        //wm->addListener(new cWorldModel::cGraphicDisplay());
+        //wm->addListener(new cWorldModel::cOffsetSerializor("/home/chs/Desktop/torcs/offset"));
+        wm->addListener(new cWorldModel::cGraphicDisplay());
         drivers[index]->addHandler(wm);
         break;
       }

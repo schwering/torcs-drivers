@@ -14,45 +14,40 @@ int cWorldModel::priority() const {
 
 void cWorldModel::handle(cDriver& context)
 {
-  for (int i = 0; i < context.sit->_ncars; ++i) {
-    const double now = context.sit->currentTime;
-    /*
-    tCarElt* car = context.sit->cars[i];
-    if (times.find(car->index) == times.end() ||
-        now - times[car->index] > 0.5) {
-      fireEvents(now, context.sit->cars[i]);
-      times[car->index] = now;
-    }
-    */
-    fireEvents(context, now, context.sit->cars[i]);
+  const double now = context.sit->currentTime;
+  const int ncars = context.sit->_ncars;
+  if (ncars == 0) {
+    return;
+  }
+  std::vector<tCarInfo> infos(ncars);
+
+  for (int i = 0; i < ncars; ++i) {
+    infos[i] = build_car_info(now, context.sit->cars[i]);
+  }
+
+  for (size_t i = 0; i < listeners.size(); ++i) {
+    listeners[i]->process_or_skip(context, infos);
   }
 }
 
-void cWorldModel::fireEvents(const cDriver& context, double now, tCarElt* car)
+cWorldModel::tCarInfo cWorldModel::build_car_info(double now, tCarElt* car)
 {
   tCarInfo ci;
   ci.name = car->_name;
   ci.time = now;
   ci.veloc = car->_speed_x;
   ci.accel = car->_accel_x;
+
   const tTrkLocPos trkPos = car->_trkPos;
   ci.yaw = car->_yaw - RtTrackSideTgAngleL(const_cast<tTrkLocPos*>(&trkPos));
   //ci.yaw += M_PI / 2; // we use X axis as offset, Y as position in Golog
   NORM_PI_PI(ci.yaw);
+
   ci.pos = RtGetDistFromStart(car);
   ci.offset = trkPos.toMiddle;
   //ci.offset *= -1.0f; // we use X axis as offset, Y as position in Golog
 
-  for (size_t i = 0; i < listeners.size(); ++i) {
-    cListener* listener = listeners[i];
-    const std::pair<int, int> key = std::make_pair(car->index, i);
-    const std::map<std::pair<int, int>, double>::const_iterator jt =
-        times.find(key);
-    if (jt == times.end() || now - jt->second > listener->interval()) {
-      listener->process(context, ci);
-      times[key] = now;
-    }
-  }
+  return ci;
 }
 
 void cWorldModel::addListener(cWorldModel::cListener* listener)
@@ -61,11 +56,43 @@ void cWorldModel::addListener(cWorldModel::cListener* listener)
 }
 
 
+void cWorldModel::cListener::process_or_skip(
+    const cDriver& context,
+    const std::vector<tCarInfo>& infos)
+{
+  assert(infos.size() > 0);
+  const double now = infos[0].time;
+  if (now - lastTime >= interval()) {
+    process(context, infos);
+    lastTime = now;
+  }
+}
+
+
+void cWorldModel::cListener::process(
+    const cDriver& context,
+    const std::vector<tCarInfo>& infos)
+{
+  /* default impl forwards */
+  for (std::vector<tCarInfo>::const_iterator it = infos.begin();
+       it != infos.end(); ++it) {
+    process(context, *it);
+  }
+}
+
+
+void cWorldModel::cListener::process(
+    const cDriver& context,
+    const tCarInfo& info)
+{
+  /* dummy */
+}
+
+
 cWorldModel::cSimplePrologSerializor::cSimplePrologSerializor(const char *name)
   : fp(fopen_next(name, "ecl")),
     activated(false),
-    virtualStart(-1.0),
-    lastTime(0.0)
+    virtualStart(-1.0)
 {
   mouseInfo = GfctrlMouseInit();
 }
@@ -82,8 +109,10 @@ cWorldModel::cSimplePrologSerializor::~cSimplePrologSerializor()
 }
 
 void cWorldModel::cSimplePrologSerializor::process(
-    const cDriver& context, const cWorldModel::tCarInfo& ci)
+    const cDriver& context,
+    const std::vector<tCarInfo>& infos)
 {
+  /*
   if (!activated) {
     GfctrlMouseGetCurrent(mouseInfo);
     if (mouseInfo->button[0] == 1 ||
@@ -110,60 +139,69 @@ void cWorldModel::cSimplePrologSerializor::process(
       activated = fgetc(stdin) != EOF;
     }
   }
+  */
 
-  activated = activated || mps2kmph(ci.veloc) > 50;
+  for (std::vector<tCarInfo>::const_iterator it = infos.begin();
+       it != infos.end(); ++it) {
+    activated = activated || mps2kmph(it->veloc) > 70;
+  }
 
   if (activated) {
     FILE *fps[] = { stdout, fp };
-    char nameTerm[32];
-
-    sprintf(nameTerm, "'%s'", ci.name);
 
     /* Cars start before the starting line and therefore with a high position,
      * that is, the sequence of positions could be 2900, 3000, 3100, 100, 200.
      * These discontiguous don't fit our simple driving model in basic action
-     * theory. Therefore, we choose a virtual starting line at the first
-     * measured position minus some distance (the second measurement might be
-     * even before the first measurement) and convert all subsequent
-     * measurements into a position with respect the virtual starting line. */
+     * theory. Therefore, we choose a virtual starting line at the minimal first
+     * measured position minus. */
 
     if (virtualStart < 0.0) {
-      virtualStart = ci.pos - 250.0;
+      double maxPos = 0.0;
+      for (std::vector<tCarInfo>::const_iterator it = infos.begin();
+           it != infos.end(); ++it) {
+        if (it->pos > maxPos) {
+          maxPos = it->pos;
+        }
+      }
+      virtualStart = maxPos;
       assert(virtualStart >= 0.0);
     }
 
-    double pos = ci.pos;
-    if (pos >= virtualStart) {
-      pos -= virtualStart;
-    } else {
-      pos += context.track->length - virtualStart;
-    }
-
     for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
-      if (ci.time != lastTime) {
-        fprintf(fps[i], "obs(%10.5lf, [", ci.time);
-      } else {
-        fprintf(fps[i], "                 ");
+      FILE *fp = fps[i];
+      for (std::vector<tCarInfo>::const_iterator it = infos.begin();
+           it != infos.end(); ++it) {
+        char nameTerm[32];
+        sprintf(nameTerm, "'%s'", it->name);
+
+        double pos = it->pos;
+        if (pos >= virtualStart) {
+          pos -= virtualStart;
+        } else {
+          pos += context.track->length - virtualStart;
+        }
+
+        if (it == infos.begin()) {
+          fprintf(fp, "obs(%10.5lf, [", it->time);
+        } else {
+          fprintf(fp, ",");
+          fprintf(fp, "                 ");
+        }
+        fprintf(fp,
+                " pos(%10s) = %10.4f,"\
+                " offset(%10s) = %7.3f,"\
+                " veloc(%10s) = %10.6f,"\
+                " rad(%10s) = %10.7f," \
+                " deg(%10s) = %10.6f",
+                nameTerm, pos,
+                nameTerm, it->offset,
+                nameTerm, it->veloc,
+                nameTerm, it->yaw,
+                nameTerm, rad2deg(it->yaw));
       }
-      fprintf(fps[i],
-              " pos(%10s) = %10.4f,"\
-              " offset(%10s) = %7.3f,"\
-              " veloc(%10s) = %10.6f,"\
-              " rad(%10s) = %10.7f," \
-              " deg(%10s) = %10.6f",
-              nameTerm, pos,
-              nameTerm, ci.offset,
-              nameTerm, ci.veloc,
-              nameTerm, ci.yaw,
-              nameTerm, rad2deg(ci.yaw));
-      if (ci.time != lastTime) {
-        fprintf(fps[i], ",");
-      } else {
-        fprintf(fps[i], "]).\n");
-      }
-      fflush(fps[i]);
+      fprintf(fp, "]).\n");
+      fflush(fp);
     }
-    lastTime = ci.time;
   }
 }
 
