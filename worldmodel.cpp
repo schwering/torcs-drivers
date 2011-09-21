@@ -63,7 +63,8 @@ void cWorldModel::addListener(cWorldModel::cListener* listener)
 
 cWorldModel::cSimplePrologSerializor::cSimplePrologSerializor(const char *name)
   : fp(fopen_next(name, "ecl")),
-    activated(false)
+    activated(false),
+    lastTime(0.0)
 {
   mouseInfo = GfctrlMouseInit();
 }
@@ -105,6 +106,10 @@ void cWorldModel::cSimplePrologSerializor::process(
 
   activated = activated || mps2kmph(ci.veloc) > 50;
   if (activated) {
+    char nameTerm[32];
+
+    sprintf(nameTerm, "'%s'", ci.name);
+
 #if 0
     if (!strcmp("Player", ci.name) && abs(rad2deg(ci.yaw)) >= 0.0)
       fprintf(fp,
@@ -113,22 +118,31 @@ void cWorldModel::cSimplePrologSerializor::process(
 #else
     FILE *fps[] = { stdout, fp };
     for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
+      if (ci.time != lastTime) {
+        fprintf(fps[i], "obs(%10.5lf, [", ci.time);
+      } else {
+        fprintf(fps[i], "                 ");
+      }
       fprintf(fps[i],
-              "obs(%lf, ["\
-              "pos('%s') = %f, "\
-              "offset('%s') = %f, "\
-              "veloc('%s') = %f, "\
-              "rad('%s') = %f, " \
-              "deg('%s') = %f]).\n",
-              ci.time,
-              ci.name, ci.pos,
-              ci.name, ci.offset,
-              ci.name, ci.veloc,
-              ci.name, ci.yaw,
-              ci.name, rad2deg(ci.yaw));
+              " pos(%10s) = %10.4f,"\
+              " offset(%10s) = %7.3f,"\
+              " veloc(%10s) = %10.6f,"\
+              " rad(%10s) = %10.7f," \
+              " deg(%10s) = %10.6f",
+              nameTerm, ci.pos,
+              nameTerm, ci.offset,
+              nameTerm, ci.veloc,
+              nameTerm, ci.yaw,
+              nameTerm, rad2deg(ci.yaw));
+      if (ci.time != lastTime) {
+        fprintf(fps[i], ",\n");
+      } else {
+        fprintf(fps[i], "]).\n");
+      }
       fflush(fps[i]);
     }
 #endif
+    lastTime = ci.time;
   }
 }
 

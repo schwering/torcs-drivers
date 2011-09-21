@@ -49,6 +49,7 @@ class cWorldModel : public cDriver::cHandler
     FILE *fp;
     bool activated;
     tCtrlMouseInfo* mouseInfo;
+    double lastTime;
   };
 
   class cOffsetSerializor : public cListener
