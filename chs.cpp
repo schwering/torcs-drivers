@@ -59,7 +59,9 @@ static cDriver& get_driver(int index)
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_RIGHT));
         drivers[index]->addHandler(new cMiniThrottle(60.0f));
         cWorldModel* wm = new cWorldModel();
-        wm->addListener(new cWorldModel::cSimplePrologSerializor());
+        wm->addListener(new cWorldModel::cSimplePrologSerializor("/home/chs/Desktop/torcs/prolog"));
+        wm->addListener(new cWorldModel::cOffsetSerializor("/home/chs/Desktop/torcs/offset"));
+        //wm->addListener(new cWorldModel::cGraphicDisplay());
         drivers[index]->addHandler(wm);
         break;
       }
@@ -90,9 +92,6 @@ int chs(tModInfo* modInfo)
     modInfo[i].fctInit = initFuncPt;
     modInfo[i].gfId    = ROB_IDENT;
     modInfo[i].index   = i;
-  }
-  for (int i = 0; i < MAX_BOTS; ++i) {
-    printf("bot '%s' / '%s' / %d\n", modInfo[i].name, modInfo[i].desc, modInfo[i].index);
   }
   return 0;
 }
