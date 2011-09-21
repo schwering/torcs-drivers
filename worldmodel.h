@@ -30,7 +30,7 @@ class cWorldModel : public cDriver::cHandler
    public:
     cListener() {}
     virtual ~cListener() {}
-    virtual void process(const tCarInfo& carInfo) = 0;
+    virtual void process(const cDriver& context, const tCarInfo& carInfo) = 0;
     virtual float interval() const = 0;
 
    private:
@@ -42,13 +42,14 @@ class cWorldModel : public cDriver::cHandler
    public:
     explicit cSimplePrologSerializor(const char *name);
     virtual ~cSimplePrologSerializor();
-    virtual void process(const tCarInfo& ci);
+    virtual void process(const cDriver& context, const tCarInfo& ci);
     virtual float interval() const;
 
    private:
     FILE *fp;
     bool activated;
     tCtrlMouseInfo* mouseInfo;
+    double virtualStart;
     double lastTime;
   };
 
@@ -56,7 +57,7 @@ class cWorldModel : public cDriver::cHandler
   {
    public:
     explicit cOffsetSerializor(const char *name);
-    virtual void process(const tCarInfo& ci);
+    virtual void process(const cDriver& context, const tCarInfo& ci);
     virtual float interval() const;
 
    private:
@@ -75,7 +76,7 @@ class cWorldModel : public cDriver::cHandler
    public:
     cGraphicDisplay();
     virtual ~cGraphicDisplay();
-    virtual void process(const tCarInfo& ci);
+    virtual void process(const cDriver& context, const tCarInfo& ci);
     virtual float interval() const;
    private:
     static const float WHITE[4];
@@ -91,12 +92,12 @@ class cWorldModel : public cDriver::cHandler
   virtual ~cWorldModel() {}
 
   virtual int priority() const;
-  virtual void handle(cDriver& state);
+  virtual void handle(cDriver& context);
 
   void addListener(cListener* listener);
 
  private:
-  void fireEvents(double time, tCarElt* car);
+  void fireEvents(const cDriver& context, double time, tCarElt* car);
 
   std::map<std::pair<int, int>, double> times;
   wrapped_container< std::vector<cListener*> > listeners;

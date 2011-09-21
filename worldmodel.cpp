@@ -12,23 +12,23 @@ int cWorldModel::priority() const {
   return 10000;
 }
 
-void cWorldModel::handle(cDriver& state)
+void cWorldModel::handle(cDriver& context)
 {
-  for (int i = 0; i < state.sit->_ncars; ++i) {
-    const double now = state.sit->currentTime;
+  for (int i = 0; i < context.sit->_ncars; ++i) {
+    const double now = context.sit->currentTime;
     /*
-    tCarElt* car = state.sit->cars[i];
+    tCarElt* car = context.sit->cars[i];
     if (times.find(car->index) == times.end() ||
         now - times[car->index] > 0.5) {
-      fireEvents(now, state.sit->cars[i]);
+      fireEvents(now, context.sit->cars[i]);
       times[car->index] = now;
     }
     */
-    fireEvents(now, state.sit->cars[i]);
+    fireEvents(context, now, context.sit->cars[i]);
   }
 }
 
-void cWorldModel::fireEvents(double now, tCarElt* car)
+void cWorldModel::fireEvents(const cDriver& context, double now, tCarElt* car)
 {
   tCarInfo ci;
   ci.name = car->_name;
@@ -49,7 +49,7 @@ void cWorldModel::fireEvents(double now, tCarElt* car)
     const std::map<std::pair<int, int>, double>::const_iterator jt =
         times.find(key);
     if (jt == times.end() || now - jt->second > listener->interval()) {
-      listener->process(ci);
+      listener->process(context, ci);
       times[key] = now;
     }
   }
@@ -64,6 +64,7 @@ void cWorldModel::addListener(cWorldModel::cListener* listener)
 cWorldModel::cSimplePrologSerializor::cSimplePrologSerializor(const char *name)
   : fp(fopen_next(name, "ecl")),
     activated(false),
+    virtualStart(-1.0),
     lastTime(0.0)
 {
   mouseInfo = GfctrlMouseInit();
@@ -81,7 +82,7 @@ cWorldModel::cSimplePrologSerializor::~cSimplePrologSerializor()
 }
 
 void cWorldModel::cSimplePrologSerializor::process(
-    const cWorldModel::tCarInfo& ci)
+    const cDriver& context, const cWorldModel::tCarInfo& ci)
 {
   if (!activated) {
     GfctrlMouseGetCurrent(mouseInfo);
@@ -111,18 +112,33 @@ void cWorldModel::cSimplePrologSerializor::process(
   }
 
   activated = activated || mps2kmph(ci.veloc) > 50;
+
   if (activated) {
+    FILE *fps[] = { stdout, fp };
     char nameTerm[32];
 
     sprintf(nameTerm, "'%s'", ci.name);
 
-#if 0
-    if (!strcmp("Player", ci.name) && abs(rad2deg(ci.yaw)) >= 0.0)
-      fprintf(fp,
-              "observe(%2.5lf, deg('%s') = %2.2lf);\n",
-              ci.time, ci.name, rad2deg(ci.yaw));
-#else
-    FILE *fps[] = { stdout, fp };
+    /* Cars start before the starting line and therefore with a high position,
+     * that is, the sequence of positions could be 2900, 3000, 3100, 100, 200.
+     * These discontiguous don't fit our simple driving model in basic action
+     * theory. Therefore, we choose a virtual starting line at the first
+     * measured position minus some distance (the second measurement might be
+     * even before the first measurement) and convert all subsequent
+     * measurements into a position with respect the virtual starting line. */
+
+    if (virtualStart < 0.0) {
+      virtualStart = ci.pos - 250.0;
+      assert(virtualStart >= 0.0);
+    }
+
+    double pos = ci.pos;
+    if (pos >= virtualStart) {
+      pos -= virtualStart;
+    } else {
+      pos += context.track->length - virtualStart;
+    }
+
     for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
       if (ci.time != lastTime) {
         fprintf(fps[i], "obs(%10.5lf, [", ci.time);
@@ -135,19 +151,18 @@ void cWorldModel::cSimplePrologSerializor::process(
               " veloc(%10s) = %10.6f,"\
               " rad(%10s) = %10.7f," \
               " deg(%10s) = %10.6f",
-              nameTerm, ci.pos,
+              nameTerm, pos,
               nameTerm, ci.offset,
               nameTerm, ci.veloc,
               nameTerm, ci.yaw,
               nameTerm, rad2deg(ci.yaw));
       if (ci.time != lastTime) {
-        fprintf(fps[i], ",\n");
+        fprintf(fps[i], ",");
       } else {
         fprintf(fps[i], "]).\n");
       }
       fflush(fps[i]);
     }
-#endif
     lastTime = ci.time;
   }
 }
@@ -178,7 +193,7 @@ cWorldModel::cOffsetSerializor::cOffsetSerializor(const char *name)
 }
 
 void cWorldModel::cOffsetSerializor::process(
-    const cWorldModel::tCarInfo& ci)
+    const cDriver& context, const cWorldModel::tCarInfo& ci)
 {
   if (!strcmp("Player", ci.name) || !strcmp("human", ci.name)) {
     if (mps2kmph(ci.veloc) > 50 && row < HEIGHT) {
@@ -209,7 +224,7 @@ const float cWorldModel::cGraphicDisplay::WHITE[] = {1.0, 1.0, 1.0, 1.0};
 const int cWorldModel::cGraphicDisplay::Y[] = {90, 70, 50, 30, 10};
 
 void cWorldModel::cGraphicDisplay::process(
-    const cWorldModel::tCarInfo& ci)
+    const cDriver& context, const cWorldModel::tCarInfo& ci)
 {
   float *white = const_cast<float*>(WHITE);
   int i;

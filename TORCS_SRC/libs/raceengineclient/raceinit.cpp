@@ -324,13 +324,13 @@ initStartingGrid(void)
 	for (i = 0; i < ReInfo->s->_ncars; i++) {
 		car = &(ReInfo->carList[i]);
 		car->_speed_x = speedInit;
-		startpos = ReInfo->track->length - (d1 + (i / rows) * d2 + (i % rows) * d3);
-                printf("name = %s\n", car->_name);
-                printf("dim = %f %f %f\n", car->_dimension_x, car->_dimension_y, car->_dimension_z);
-                printf("a = %lf\n", a);
-                printf("b = %lf\n", b);
-                printf("tr = %lf\n", tr);
 		//tr = a + b * ((i % rows) + 1) / (rows + 1);
+		startpos = ReInfo->track->length - (d1 + (i / rows) * d2 + (i % rows) * d3);
+                /* DA: want to have a long straight segment, which is why we
+                 * want to start way before the starting line. */
+		startpos -= 170;
+                /* DA: by default, we start a little bit too near the track's
+                 * center, but we cant to get to each track's center. */
 		tr = a + b * (i % rows) / rows;
 		curseg = ReInfo->track->seg;  /* last segment */
 		while (startpos < curseg->lgfromstart) {
