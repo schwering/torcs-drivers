@@ -141,9 +141,20 @@ void cWorldModel::cSimplePrologSerializor::process(
   }
   */
 
+  bool prev_activated = activated;
+
   for (std::vector<tCarInfo>::const_iterator it = infos.begin();
        it != infos.end(); ++it) {
     activated = activated || mps2kmph(it->veloc) > 70;
+  }
+
+  if (!prev_activated && activated) {
+      ReMovieCapture();
+      FILE *fps[] = { stdout, fp };
+      for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
+        fprintf(fps[i], "\n%% BeginOfRecord\n\n");
+        fflush(fps[i]);
+      }
   }
 
   if (activated) {
