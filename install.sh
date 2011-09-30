@@ -1,4 +1,8 @@
-make -C ../../../ &&\
-sudo cp chs.so /usr/local/lib/torcs/drivers/chs/chs.so &&\
-sudo cp ../human/human.so /usr/local/lib/torcs/drivers/human/human.so &&\
-torcs
+#!/bin/bash
+ROOT="../../.."
+BIN="${ROOT}/bin"
+LIB="${ROOT}/lib"
+make -C ${ROOT} &&\
+cp chs.so ${LIB}/torcs/drivers/chs/chs.so &&\
+cp ../human/human.so ${LIB}/torcs/drivers/human/human.so &&\
+${BIN}/torcs
