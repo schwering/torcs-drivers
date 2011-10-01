@@ -1,17 +1,26 @@
-dir=${HOME}/Desktop/torcs_captures
+DIR=${HOME}/Desktop/torcs_captures
+FPS=12.5
 
-for f in $(ls ${dir}/*.pnm)
+for f in $(ls ${DIR}/*.pnm)
 do
-        g=$(echo $f | sed -e 's/\.pnm/\.png/g')
+        g=$(echo "$f" | sed -e 's/\.pnm/\.png/g')
         echo "Converting $f -> $g."
         if [ ! -f "$g" ]
         then
-                pnmtopng $f >$g || exit
+                pnmtopng "$f" >"$g" || exit
         fi
 done
 
 echo "Creating video."
-mencoder mf://${dir}/*.png -mf w=800:h=600:fps=25:type=png -ovc lavc -lavcopts vcodec=mpeg4 -oac copy -o ${dir}/output.avi || exit
 
-mplayer ${dir}/output.avi || exit
+if [ -f "${DIR}/sub" ];
+then
+        SUB="-sub ${DIR}/sub"
+else
+        SUB=""
+fi
+
+mencoder mf://${DIR}/*.png -mf w=800:h=600:fps=${FPS}:type=png -ovc lavc -lavcopts vcodec=mpeg4 -oac copy ${SUB} -o "${DIR}/output.avi" || exit
+
+mplayer "${DIR}/output.avi" || exit
 

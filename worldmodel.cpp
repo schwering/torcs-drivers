@@ -3,6 +3,7 @@
 #include <sys/select.h>
 
 #include <raceinit.h>
+#include <raceengine.h>
 #include <tgfclient.h>
 
 #include "macros.h"
@@ -149,7 +150,7 @@ void cWorldModel::cSimplePrologSerializor::process(
   }
 
   if (!prev_activated && activated) {
-      ReMovieCapture();
+      ReMovieCaptureHack();
       FILE *fps[] = { stdout, fp };
       for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
         fprintf(fps[i], "\n%% BeginOfRecord\n\n");
