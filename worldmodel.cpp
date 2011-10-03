@@ -38,6 +38,7 @@ cWorldModel::tCarInfo cWorldModel::build_car_info(double now, tCarElt* car)
   ci.time = now;
   ci.veloc = car->_speed_x;
   ci.accel = car->_accel_x;
+  ci.laps = car->_laps;
 
   const tTrkLocPos trkPos = car->_trkPos;
   ci.yaw = car->_yaw - RtTrackSideTgAngleL(const_cast<tTrkLocPos*>(&trkPos));
@@ -168,14 +169,21 @@ void cWorldModel::cSimplePrologSerializor::process(
      * measured position minus. */
 
     if (virtualStart < 0.0) {
-      double maxPos = 0.0;
+      bool init = false;
+      double minPos = 0.0;
+      int minLaps = 0;
       for (std::vector<tCarInfo>::const_iterator it = infos.begin();
            it != infos.end(); ++it) {
-        if (it->pos > maxPos) {
-          maxPos = it->pos;
+        if (!init ||
+            it->laps < minLaps ||
+            (it->laps == minLaps && it->pos < minPos)) {
+          init = true;
+          minPos = it->pos;
+          minLaps = it->laps;
         }
       }
-      virtualStart = maxPos;
+      virtualStart = minPos;
+      assert(init);
       assert(virtualStart >= 0.0);
     }
 

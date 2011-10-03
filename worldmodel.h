@@ -23,6 +23,7 @@ class cWorldModel : public cDriver::cHandler
     float yaw;
     float pos;
     float offset;
+    int laps;
   };
 
   class cListener
