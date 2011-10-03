@@ -1,5 +1,5 @@
 DIR=${HOME}/Desktop/torcs_captures
-FPS=12.5
+FPS=2.5
 
 for f in $(ls ${DIR}/*.pnm)
 do

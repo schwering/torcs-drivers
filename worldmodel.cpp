@@ -151,10 +151,13 @@ void cWorldModel::cSimplePrologSerializor::process(
   }
 
   if (!prev_activated && activated) {
-      ReMovieCaptureHack(25);
+      //ReMovieCaptureHack(25);
       FILE *fps[] = { stdout, fp };
       for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
-        fprintf(fps[i], "\n%% BeginOfRecord\n\n");
+        fprintf(fps[i], ":- module(obs).\n");
+        fprintf(fps[i], ":- export(obs/2).\n");
+        fprintf(fps[i], "\n");
+        fprintf(fps[i], "%% BeginOfRecord\n\n");
         fflush(fps[i]);
       }
   }
