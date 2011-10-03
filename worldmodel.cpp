@@ -150,7 +150,7 @@ void cWorldModel::cSimplePrologSerializor::process(
   }
 
   if (!prev_activated && activated) {
-      ReMovieCaptureHack();
+      ReMovieCaptureHack(25);
       FILE *fps[] = { stdout, fp };
       for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
         fprintf(fps[i], "\n%% BeginOfRecord\n\n");
