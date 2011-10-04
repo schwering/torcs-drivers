@@ -1,5 +1,11 @@
 DIR=${HOME}/Desktop/torcs_captures
-FPS=2.5
+FPS=$(grep ReMovieCaptureHack worldmodel.cpp | sed -e 's/^.\+(//g' | sed -e 's/);//g')
+
+scp rambo:sub "${DIR}" &&\
+scp rambo:Documents/Prolog/ccgolog/offset-*.dat "${DIR}" &&\
+ssh rambo "rm Documents/Prolog/ccgolog/offset-*.dat"
+CURRENT=$(pwd)
+(cd /home/chs/Documents/Prolog/ccgolog/ && ./offset.sh ${DIR}/offset-*.dat || cd "$CURRENT" && exit) && cd "$CURRENT"
 
 for f in $(ls ${DIR}/*.pnm)
 do
@@ -20,7 +26,7 @@ else
         SUB=""
 fi
 
-mencoder mf://${DIR}/*.png -mf w=800:h=600:fps=${FPS}:type=png -ovc lavc -lavcopts vcodec=mpeg4 -oac copy ${SUB} -o "${DIR}/output.avi" || exit
+mencoder mf://${DIR}/torcs-*.png -mf w=800:h=600:fps=${FPS}:type=png -ovc lavc -lavcopts vcodec=mpeg4 -oac copy ${SUB} -o "${DIR}/output.avi" || exit
 
-mplayer "${DIR}/output.avi" || exit
+mplayer -loop 0 "${DIR}/output.avi" || exit
 
