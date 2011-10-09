@@ -14,6 +14,7 @@ do
         if [ ! -f "$g" ]
         then
                 pnmtopng "$f" >"$g" || exit
+                rm -f "$f"
         fi
 done
 
