@@ -3,7 +3,7 @@ FPS=$(grep ReMovieCaptureHack worldmodel.cpp | sed -e 's/^.\+(//g' | sed -e 's/)
 
 scp rambo:sub "${DIR}" &&\
 scp rambo:Documents/Prolog/ccgolog/offset-*.dat "${DIR}" &&\
-ssh rambo "rm Documents/Prolog/ccgolog/offset-*.dat"
+ssh rambo "rm -f sub Documents/Prolog/ccgolog/offset-*.dat"
 CURRENT=$(pwd)
 
 for I in $(seq 0 100000)

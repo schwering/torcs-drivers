@@ -1,9 +1,14 @@
 DIR=${HOME}/Desktop/torcs_captures
-FPS=$(grep ReMovieCaptureHack worldmodel.cpp | sed -e 's/^.\+(//g' | sed -e 's/);//g')
+FPS=$(grep ReMovieCaptureHack worldmodel.cpp | sed -e 's/^.\+(//g' | sed -e 's/);//g' | grep -v "^0")
+
+if [ "$1" != "" ]
+then
+        DIR="$1"
+fi
 
 scp rambo:sub "${DIR}" &&\
 scp rambo:Documents/Prolog/ccgolog/offset-*.dat "${DIR}" &&\
-ssh rambo "rm Documents/Prolog/ccgolog/offset-*.dat"
+ssh rambo "rm -f sub Documents/Prolog/ccgolog/offset-*.dat"
 CURRENT=$(pwd)
 (cd /home/chs/Documents/Prolog/ccgolog/ && ./offset.sh ${DIR}/offset-*.dat || cd "$CURRENT" && exit) && cd "$CURRENT"
 

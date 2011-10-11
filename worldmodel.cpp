@@ -101,6 +101,7 @@ cWorldModel::cSimplePrologSerializor::cSimplePrologSerializor(const char *name)
 
 cWorldModel::cSimplePrologSerializor::~cSimplePrologSerializor()
 {
+  ReMovieCaptureHack(0);
   FILE *fps[] = { stdout, fp };
   for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
     fprintf(fps[i], "\n%% EndOfRecord\n\n");
