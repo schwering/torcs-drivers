@@ -6,6 +6,8 @@ then
         DIR="$1"
 fi
 
+echo "Creating video with ${FPS} fps"
+
 scp rambo:sub "${DIR}" &&\
 scp rambo:Documents/Prolog/ccgolog/offset-*.dat "${DIR}" &&\
 ssh rambo "rm -f sub Documents/Prolog/ccgolog/offset-*.dat"

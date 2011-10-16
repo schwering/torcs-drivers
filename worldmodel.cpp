@@ -1,5 +1,8 @@
 #include "worldmodel.h"
 
+#include <assert.h>
+#include <errno.h>
+#include <poll.h>
 #include <sys/select.h>
 
 #include <raceinit.h>
@@ -8,6 +11,12 @@
 
 #include "macros.h"
 #include "util.h"
+
+namespace colors {
+const float WHITE[] = {1.0, 1.0, 1.0, 1.0};
+const float RED[]   = {1.0, 0.0, 0.0, 1.0};
+const float GREEN[] = {0.0, 1.0, 0.0, 1.0};
+}
 
 int cWorldModel::priority() const {
   return 10000;
@@ -57,7 +66,6 @@ void cWorldModel::addListener(cWorldModel::cListener* listener)
   listeners.push_back(listener);
 }
 
-
 void cWorldModel::cListener::process_or_skip(
     const cDriver& context,
     const std::vector<tCarInfo>& infos)
@@ -70,7 +78,6 @@ void cWorldModel::cListener::process_or_skip(
   }
 }
 
-
 void cWorldModel::cListener::process(
     const cDriver& context,
     const std::vector<tCarInfo>& infos)
@@ -81,7 +88,6 @@ void cWorldModel::cListener::process(
     process(context, *it);
   }
 }
-
 
 void cWorldModel::cListener::process(
     const cDriver& context,
@@ -152,7 +158,7 @@ void cWorldModel::cSimplePrologSerializor::process(
   }
 
   if (!prev_activated && activated) {
-      ReMovieCaptureHack(10);
+      ReMovieCaptureHack(5);
       FILE *fps[] = { stdout, fp };
       for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
         fprintf(fps[i], ":- module(obs).\n");
@@ -234,6 +240,7 @@ float cWorldModel::cSimplePrologSerializor::interval() const
   return 0.5f;
 }
 
+
 cWorldModel::cOffsetSerializor::cOffsetSerializor(const char *name)
   : img(name, WIDTH, HEIGHT),
     row(0)
@@ -273,22 +280,22 @@ float cWorldModel::cOffsetSerializor::interval() const
   return 0.0f;
 }
 
-cWorldModel::cGraphicDisplay::cGraphicDisplay()
+
+cWorldModel::cGraphicInfoDisplay::cGraphicInfoDisplay()
   : col(0)
 {
 }
 
-cWorldModel::cGraphicDisplay::~cGraphicDisplay()
+cWorldModel::cGraphicInfoDisplay::~cGraphicInfoDisplay()
 {
 }
 
-const float cWorldModel::cGraphicDisplay::WHITE[] = {1.0, 1.0, 1.0, 1.0};
-const int cWorldModel::cGraphicDisplay::Y[] = {90, 70, 50, 30, 10};
+const int cWorldModel::cGraphicInfoDisplay::Y[] = {90, 70, 50, 30, 10};
 
-void cWorldModel::cGraphicDisplay::process(
+void cWorldModel::cGraphicInfoDisplay::process(
     const cDriver& context, const cWorldModel::tCarInfo& ci)
 {
-  float *white = const_cast<float*>(WHITE);
+  float *white = const_cast<float*>(colors::WHITE);
   int i;
   if (col == 0) {
     i = 0;
@@ -315,7 +322,169 @@ void cWorldModel::cGraphicDisplay::process(
   col = (col + 1) % 2;
 }
 
-float cWorldModel::cGraphicDisplay::interval() const
+float cWorldModel::cGraphicInfoDisplay::interval() const
+{
+  return 0.0f;
+}
+
+
+namespace plan_recog {
+
+cWorldModel::cGraphicPlanRecogDisplay* handlers[10];
+int nhandlers = 0;
+
+void register_handler(cWorldModel::cGraphicPlanRecogDisplay* handler)
+{
+  handlers[nhandlers++] = handler;
+  assert((size_t) nhandlers < sizeof(handlers) / sizeof(handlers[0]));
+}
+
+void unregister_handler(cWorldModel::cGraphicPlanRecogDisplay* handler)
+{
+  int i;
+  for (i = 0; i < nhandlers; ++i) {
+    if (handlers[i] == handler) {
+      break;
+    }
+  }
+  for (i = i + 1; i < nhandlers; ++i) {
+    handlers[i-1] = handlers[i];
+  }
+}
+
+void redraw()
+{
+  for (int i = 0; i < nhandlers; ++i) {
+    handlers[i]->redraw();
+  }
+}
+
+}
+
+cWorldModel::cGraphicPlanRecogDisplay::cGraphicPlanRecogDisplay()
+{
+  memset(buf, 0, sizeof(buf));
+  offset = 0;
+  memset(last_line, 0, sizeof(buf));
+
+  plan_recog::register_handler(this);
+
+  ReSetRedrawHook(plan_recog::redraw);
+}
+
+cWorldModel::cGraphicPlanRecogDisplay::~cGraphicPlanRecogDisplay()
+{
+  plan_recog::unregister_handler(this);
+}
+
+bool cWorldModel::cGraphicPlanRecogDisplay::poll_str(char* buf, int& len)
+{
+  const int stdin_fd = 0;
+  struct pollfd pin;
+  const int timeout_msecs = 1;
+
+  pin.fd = stdin_fd;
+  pin.events = POLLIN | POLLRDHUP | POLLHUP;
+  pin.revents = 0;
+
+  int retval = ::poll(&pin, 1, timeout_msecs);
+
+  if (retval < 0) {
+    fprintf(stderr, "Can't poll, error %d\n", errno);
+    return false;
+  } else if (retval > 0 && (pin.revents & POLLIN) != 0) {
+    len = (int) read(pin.fd, buf, (size_t) len);
+    assert(len > 0);
+    buf[len] = '\0';
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool cWorldModel::cGraphicPlanRecogDisplay::poll_line(char* buf, int& offset, int len)
+{
+  assert(offset + 1 < len);
+
+  char* suffix;
+  buf[offset] = '\0';
+  /* Drop all lines in the buffer. These were already read and
+   * displayed. */
+  if ((suffix = strrchr(buf, '\n')) != NULL) {
+    const int drop_len = suffix - buf + 1;
+    memmove(buf, buf + drop_len, len - drop_len);
+    offset -= drop_len;
+  }
+  assert(strrchr(buf, '\n') == NULL);
+
+  /* Fill buffer with new bytes. */
+  int read_len = len - offset;
+  if (poll_str(buf + offset, read_len)) {
+    offset += read_len;
+    return strchr(buf, '\n') != NULL;
+  } else {
+    return false;
+  }
+}
+
+void cWorldModel::cGraphicPlanRecogDisplay::redraw()
+{
+  if (last_line[0] != '\0') {
+    const int x = 150;
+    int y = 150;
+
+    /* Print all lines, a bit cumbersome: */
+    for (char* str = last_line; str != NULL; ) {
+      while (*str == '\n') {
+        ++str;
+      }
+      char* next = strchr(str + 1, '\n');
+      if (next != NULL) {
+        *next = '\0';
+      }
+
+      float* color;
+      double prob;
+      if (sscanf(str, "%*d / %*d = %lf", &prob) == 1) {
+        if (prob >= 0.02) {
+          color = const_cast<float*>(colors::GREEN);
+        } else {
+          color = const_cast<float*>(colors::RED);
+        }
+      } else {
+        color = const_cast<float*>(colors::WHITE);
+      }
+
+      GfuiPrintString(str, color, FONT, x, y, LEFT_ALIGN);
+      y -= 30;
+      if (next != NULL) {
+        *next = '\n';
+        str = next + 1;
+      } else {
+        str = next;
+      }
+    }
+  }
+}
+
+
+void cWorldModel::cGraphicPlanRecogDisplay::process(
+    const cDriver& context, const cWorldModel::tCarInfo& ci)
+{
+  if (poll_line(buf, offset, sizeof(buf))) {
+    /* One or more new line(s) is/are present.
+     * The next call to poll_line(), even if it fails, drops the line from the
+     * string, therefore we need to keep the string in last_line. */
+    const char* suffix;
+    if ((suffix = strrchr(buf, '\n')) != NULL) {
+      int len = suffix - buf;
+      strncpy(last_line, buf, len);
+      last_line[len] = '\0';
+    }
+  }
+}
+
+float cWorldModel::cGraphicPlanRecogDisplay::interval() const
 {
   return 0.0f;
 }

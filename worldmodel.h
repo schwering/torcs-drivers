@@ -79,16 +79,15 @@ class cWorldModel : public cDriver::cHandler
     int row;
   };
 
-  class cGraphicDisplay : public cListener
+  class cGraphicInfoDisplay : public cListener
   {
    public:
-    cGraphicDisplay();
-    virtual ~cGraphicDisplay();
+    cGraphicInfoDisplay();
+    virtual ~cGraphicInfoDisplay();
     virtual void process(const cDriver& context,
                          const tCarInfo& info);
     virtual float interval() const;
    private:
-    static const float WHITE[4];
     static const int FONT = GFUI_FONT_SMALL_C;
     static const int RIGHT_ALIGN = GFUI_ALIGN_HL_VT;
     static const int LEFT_ALIGN = GFUI_ALIGN_HL_VC;
@@ -96,6 +95,33 @@ class cWorldModel : public cDriver::cHandler
     static const int COLUMN_WIDTH = 50;
     static const int Y[5];
     int col;
+  };
+
+  class cGraphicPlanRecogDisplay : public cListener
+  {
+   public:
+    cGraphicPlanRecogDisplay();
+    virtual ~cGraphicPlanRecogDisplay();
+    virtual void process(const cDriver& context,
+                         const tCarInfo& info);
+    virtual float interval() const;
+    void redraw();
+
+   private:
+    /* Returns true iff new data is present. In this case, at most len bytes
+     * are copied into the buffer. */
+    static bool poll_str(char* buf, int& len);
+    /* First cleans any complete lines from buf and then calls poll_str() and
+     * returns true if a complete line is in the buffer. */
+    static bool poll_line(char* buf, int& offset, int len);
+
+    char buf[256];
+    int offset;
+    char last_line[256];
+
+    static const int FONT = GFUI_FONT_BIG_C;
+    static const int RIGHT_ALIGN = GFUI_ALIGN_HL_VT;
+    static const int LEFT_ALIGN = GFUI_ALIGN_HL_VC;
   };
 
   virtual ~cWorldModel() {}
