@@ -15,7 +15,9 @@ do
         fi
 done
 
+(cd /home/chs/Documents/Prolog/ccgolog/ && ./offset.sh ${DIR}/offset-*.dat || cd "$CURRENT" && exit) && cd "$CURRENT"
 echo mv "${DIR}" "${NEWDIR}"
+
 mv "${DIR}" "${NEWDIR}" &&\
 mkdir "${DIR}"
 

@@ -108,6 +108,15 @@ class cWorldModel : public cDriver::cHandler
     void redraw();
 
    private:
+    struct Result {
+      Result() : succs(0), total(0), prob(0.0) { }
+      Result(const Result& r) : succs(r.succs), total(r.total), prob(r.prob) { }
+
+      int succs;
+      int total;
+      double prob;
+    };
+
     /* Returns true iff new data is present. In this case, at most len bytes
      * are copied into the buffer. */
     static bool poll_str(char* buf, int& len);
@@ -115,13 +124,16 @@ class cWorldModel : public cDriver::cHandler
      * returns true if a complete line is in the buffer. */
     static bool poll_line(char* buf, int& offset, int len);
 
+    static void print(const char* label, int i, bool small, const Result& r);
+
     char buf[256];
     int offset;
-    char last_line[256];
+    Result last;
+    Result best;
 
-    static const int FONT = GFUI_FONT_BIG_C;
-    static const int RIGHT_ALIGN = GFUI_ALIGN_HL_VT;
-    static const int LEFT_ALIGN = GFUI_ALIGN_HL_VC;
+    static const int SMALL_FONT = GFUI_FONT_LARGE_C;
+    static const int BIG_FONT = GFUI_FONT_BIG_C;
+    static const int CENTER_ALIGN = GFUI_ALIGN_HC_VT;
   };
 
   virtual ~cWorldModel() {}

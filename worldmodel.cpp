@@ -158,7 +158,7 @@ void cWorldModel::cSimplePrologSerializor::process(
   }
 
   if (!prev_activated && activated) {
-      ReMovieCaptureHack(5);
+      ReMovieCaptureHack(0);
       FILE *fps[] = { stdout, fp };
       for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
         fprintf(fps[i], ":- module(obs).\n");
@@ -365,7 +365,9 @@ cWorldModel::cGraphicPlanRecogDisplay::cGraphicPlanRecogDisplay()
 {
   memset(buf, 0, sizeof(buf));
   offset = 0;
+#if 0
   memset(last_line, 0, sizeof(buf));
+#endif
 
   plan_recog::register_handler(this);
 
@@ -427,13 +429,58 @@ bool cWorldModel::cGraphicPlanRecogDisplay::poll_line(char* buf, int& offset, in
   }
 }
 
-void cWorldModel::cGraphicPlanRecogDisplay::redraw()
+void cWorldModel::cGraphicPlanRecogDisplay::process(
+    const cDriver& context, const cWorldModel::tCarInfo& ci)
 {
+  if (poll_line(buf, offset, sizeof(buf))) {
+    /* One or more new line(s) is/are present.
+     * The next call to poll_line(), even if it fails, drops the line from the
+     * string, therefore we need to keep the string in last_line. */
+    const char* suffix;
+    if ((suffix = strrchr(buf, '\n')) != NULL) {
+#if 0
+      int len = suffix - buf;
+      strncpy(last_line, buf, len);
+      last_line[len] = '\0';
+#endif
+
+      for (char* str = buf; str != NULL; ) {
+        while (*str == '\n') {
+          ++str;
+        }
+        char* next = strchr(str + 1, '\n');
+        if (next != NULL) {
+          *next = '\0';
+        }
+
+        int succs;
+        int total;
+        double prob;
+        if (sscanf(str, "%d / %d = %lf", &succs, &total, &prob) == 3) {
+          last.succs = succs;
+          last.total = total;
+          last.prob = prob;
+          if (prob > best.prob) {
+            best = last;
+          }
+        }
+
+        if (next != NULL) {
+          *next = '\n';
+          str = next + 1;
+        } else {
+          str = next;
+        }
+      }
+    }
+  }
+
+#if 0
   if (last_line[0] != '\0') {
     const int x = 150;
     int y = 150;
 
-    /* Print all lines, a bit cumbersome: */
+    // Print all lines, a bit cumbersome:
     for (char* str = last_line; str != NULL; ) {
       while (*str == '\n') {
         ++str;
@@ -451,12 +498,10 @@ void cWorldModel::cGraphicPlanRecogDisplay::redraw()
         } else {
           color = const_cast<float*>(colors::RED);
         }
-      } else {
-        color = const_cast<float*>(colors::WHITE);
+        GfuiPrintString(str, color, FONT, x, y, LEFT_ALIGN);
+        y -= 30;
       }
 
-      GfuiPrintString(str, color, FONT, x, y, LEFT_ALIGN);
-      y -= 30;
       if (next != NULL) {
         *next = '\n';
         str = next + 1;
@@ -465,23 +510,29 @@ void cWorldModel::cGraphicPlanRecogDisplay::redraw()
       }
     }
   }
+#endif
 }
 
-
-void cWorldModel::cGraphicPlanRecogDisplay::process(
-    const cDriver& context, const cWorldModel::tCarInfo& ci)
+void cWorldModel::cGraphicPlanRecogDisplay::redraw()
 {
-  if (poll_line(buf, offset, sizeof(buf))) {
-    /* One or more new line(s) is/are present.
-     * The next call to poll_line(), even if it fails, drops the line from the
-     * string, therefore we need to keep the string in last_line. */
-    const char* suffix;
-    if ((suffix = strrchr(buf, '\n')) != NULL) {
-      int len = suffix - buf;
-      strncpy(last_line, buf, len);
-      last_line[len] = '\0';
-    }
-  }
+  print("last", 0, true, last);
+  print("best", 1, false, best);
+}
+
+void cWorldModel::cGraphicPlanRecogDisplay::print(
+    const char* label,
+    int i,
+    bool small,
+    const cWorldModel::cGraphicPlanRecogDisplay::Result& r)
+{
+  float* const color = const_cast<float*>(r.prob > 0.02 ? colors::GREEN : colors::RED);
+  const int font = small ? SMALL_FONT : BIG_FONT;
+  const int x = 400;
+  const int y = 550 - i * 30;
+  char buf[128];
+  sprintf(buf, "%s: %d / %d = %.1lf%%\n",
+          label, r.succs, r.total, r.prob * 100);
+  GfuiPrintString(buf, color, font, x, y, CENTER_ALIGN);
 }
 
 float cWorldModel::cGraphicPlanRecogDisplay::interval() const
