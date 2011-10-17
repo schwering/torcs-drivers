@@ -460,7 +460,7 @@ void cWorldModel::cGraphicPlanRecogDisplay::process(
           last.succs = succs;
           last.total = total;
           last.prob = prob;
-          if (prob > best.prob) {
+          if (prob >= best.prob) {
             best = last;
           }
         }

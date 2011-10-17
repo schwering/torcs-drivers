@@ -109,7 +109,7 @@ class cWorldModel : public cDriver::cHandler
 
    private:
     struct Result {
-      Result() : succs(0), total(0), prob(0.0) { }
+      Result() : succs(-1), total(-1), prob(0.0) { }
       Result(const Result& r) : succs(r.succs), total(r.total), prob(r.prob) { }
 
       int succs;
