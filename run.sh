@@ -1,11 +1,19 @@
 #!/bin/bash
 
-REMOTE=0
+REMOTE=1
+
+if [ "$1" == "-l" -o "$1" == "--local" ]
+then
+        REMOTE=0
+elif [ "$1" == "-r" -o "$1" == "--remote" ]
+then
+        REMOTE=1
+fi
 
 if [ "${REMOTE}" == "1" ]
 then
         HOST="rambo"
-        PRHOME=/home/cschwering 
+        PRHOME=$(ssh rambo 'echo ${HOME}')
         CPUS=8
 else
         HOST="$(hostname)"
@@ -19,25 +27,17 @@ function pr_exec
         CMD="$@"
         if [ "${REMOTE}" == "1" ]
         then
-                ssh rambo "$CMD" || exit
+                ssh ${HOST} "$CMD" || exit
         else
-                $CMD || exit
+                eval "$CMD" || exit
         fi
 }
 
-function pr_exec_log
-{
-        CMD="$@"
-        if [ "${REMOTE}" == "1" ]
-        then
-                ssh rambo "$CMD > \"${PRHOME}/out\"" || exit
-        else
-                $CMD > "${PRHOME}/out" || exit
-        fi
-}
-
-echo "TORCS + PlanRecog @ ${HOST}" &&\
-pr_exec rm -f ${PRHOME}/sub && touch ${PRHOME}/sub && tail -f ${PRHOME}/sub |\
+echo "TORCS + PlanRecog" &&\
+echo "HOST   = ${HOST}" &&\
+echo "PRHOME = ${PRHOME}" &&\
+echo "CPUS   = ${CPUS}" &&\
+pr_exec rm -f ${PRHOME}/sub \&\& touch "${PRHOME}/sub" \&\& tail -f "${PRHOME}/sub" |\
 ../../../bin/torcs |\
-pr_exec_log ${PRGOLOG}/ctrl -d ${PRGOLOG} -l -p ${CPUS} -t 3 -v -s -f ${PRHOME}/sub
+pr_exec "${PRGOLOG}/ctrl" -d "${PRGOLOG}" -l -p ${CPUS} -t 3 -v -s -f "${PRHOME}/sub" \> "${PRHOME}/out"
 
