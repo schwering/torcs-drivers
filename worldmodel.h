@@ -103,7 +103,7 @@ class cWorldModel : public cDriver::cHandler
     cGraphicPlanRecogDisplay();
     virtual ~cGraphicPlanRecogDisplay();
     virtual void process(const cDriver& context,
-                         const tCarInfo& info);
+                         const tCarInfo& infos);
     virtual float interval() const;
     void redraw();
 
@@ -126,6 +126,7 @@ class cWorldModel : public cDriver::cHandler
 
     static void print(const char* label, int i, bool small, const Result& r);
 
+    bool activated;
     char buf[256];
     int offset;
     Result last;

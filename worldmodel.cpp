@@ -362,9 +362,10 @@ void redraw()
 }
 
 cWorldModel::cGraphicPlanRecogDisplay::cGraphicPlanRecogDisplay()
+  : activated(false),
+    offset(0)
 {
   memset(buf, 0, sizeof(buf));
-  offset = 0;
 #if 0
   memset(last_line, 0, sizeof(buf));
 #endif
@@ -406,7 +407,11 @@ bool cWorldModel::cGraphicPlanRecogDisplay::poll_str(char* buf, int& len)
 
 bool cWorldModel::cGraphicPlanRecogDisplay::poll_line(char* buf, int& offset, int len)
 {
-  assert(offset + 1 < len);
+  if (offset + 1 >= len) {
+    fprintf(stderr, "cleaned buffer, might have ignored plan recog output\n");
+    fflush(stderr);
+    offset = 0;
+  }
 
   char* suffix;
   buf[offset] = '\0';
@@ -430,8 +435,12 @@ bool cWorldModel::cGraphicPlanRecogDisplay::poll_line(char* buf, int& offset, in
 }
 
 void cWorldModel::cGraphicPlanRecogDisplay::process(
-    const cDriver& context, const cWorldModel::tCarInfo& ci)
+    const cDriver& context, const tCarInfo& info)
 {
+  if (!activated) {
+    activated = context.sit->currentTime > 5.0;
+  }
+
   if (poll_line(buf, offset, sizeof(buf))) {
     /* One or more new line(s) is/are present.
      * The next call to poll_line(), even if it fails, drops the line from the
@@ -457,11 +466,18 @@ void cWorldModel::cGraphicPlanRecogDisplay::process(
         int total;
         double prob;
         if (sscanf(str, "%d / %d = %lf", &succs, &total, &prob) == 3) {
-          last.succs = succs;
-          last.total = total;
-          last.prob = prob;
-          if (prob >= best.prob) {
-            best = last;
+          if (activated) {
+            last.succs = succs;
+            last.total = total;
+            last.prob = prob;
+            if (prob >= best.prob) {
+              best = last;
+            }
+          } else {
+            fprintf(stderr, "ignoring plan recog result %d / %d = %lf, "\
+                    "because it is probably from a previous run\n",
+                    succs, total, prob);
+            fflush(stderr);
           }
         }
 
