@@ -1,11 +1,22 @@
-\documentclass[a4paper,10pt]{scrartcl}
+\documentclass[a4paper,12pt]{scrartcl}
 
 \usepackage[ngerman]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage[
+  pdftex,a4paper=true,colorlinks=true,
+  pdftitle={Formular},pdfsubject={Zugang},
+  pdfauthor={ich},pdfpagemode=UseNone,pdfstartview=FitH,
+  pagebackref,pdfhighlight={/N}
+]{hyperref}
+
+
 
 \begin{document}
 
+\section*{Tipps}
 \begin{itemize}
 \item Man darf vorher gerne "uben.
+\item Leider hat das Auto leichten Rechtsdrall. Das ist nicht gewollt.
 \item Das rote Auto erstmal drei bis f"unf Sekunden wegfahren lassen.
 \item Beim anfahren darf man zuerst langsam beschleunigen (bis so
     40 km/h), dann soll man aber Vollgas geben und {\em nicht mehr vom
@@ -31,32 +42,53 @@
     Bildschirms in gro"ser, gr"uner oder roter Schrift erscheint.
 \end{itemize}
 
-\begin{center}
+\section*{Tabelle}
+\hspace{\parindent}
+\begin{Form}[action=mailto:schwering@gmail.com?subject=TORCS-Evaluation,encoding=html,method=post]
+%\begin{figure}[ht]
+%
+\begin{minipage}{0.5\linewidth}
 \begin{tabular}{|r|l|r|}
 \hline
-\bf \# & \bf Man"over & \bf Wahrscheinlichkeit\\ \hline
-1 & links "uberholen & \\ \hline
-2 & links "uberholen & \\ \hline
-3 & links "uberholen & \\ \hline
-4 & links "uberholen & \\ \hline
-5 & rechts "uberholen & \\ \hline
-6 & links "uberholen & \\ \hline
-7 & links "uberholen & \\ \hline
-8 & links "uberholen & \\ \hline
-9 & links "uberholen & \\ \hline
-10 & rechts "uberholen & \\ \hline
-11 & links "uberholen & \\ \hline
-12 & links "uberholen & \\ \hline
-13 & links "uberholen & \\ \hline
-14 & links "uberholen & \\ \hline
-15 & rechts "uberholen & \\ \hline
-16 & links "uberholen & \\ \hline
-17 & links "uberholen & \\ \hline
-18 & links "uberholen & \\ \hline
-19 & links "uberholen & \\ \hline
-20 & rechts "uberholen & \\ \hline
+\bf \# & \bf Man"over  & \bf Konfidenz\\ \hline
+1 & links "uberholen   & \TextField[name=m1,width=0.1\linewidth]{} \%\\ \hline
+2 & links "uberholen   & \TextField[name=m2,width=0.1\linewidth]{} \%\\ \hline
+3 & links "uberholen   & \TextField[name=m3,width=0.1\linewidth]{} \%\\ \hline
+4 & links "uberholen   & \TextField[name=m4,width=0.1\linewidth]{} \%\\ \hline
+5 & rechts "uberholen  & \TextField[name=m5,width=0.1\linewidth]{} \%\\ \hline
+6 & links "uberholen   & \TextField[name=m6,width=0.1\linewidth]{} \%\\ \hline
+7 & links "uberholen   & \TextField[name=m7,width=0.1\linewidth]{} \%\\ \hline
+8 & links "uberholen   & \TextField[name=m8,width=0.1\linewidth]{} \%\\ \hline
+9 & links "uberholen   & \TextField[name=m9,width=0.1\linewidth]{} \%\\ \hline
+10 & rechts "uberholen & \TextField[name=m10,width=0.1\linewidth]{} \%\\ \hline
 \end{tabular}
-\end{center}
+\end{minipage}
+%
+\begin{minipage}{0.5\linewidth}
+\begin{tabular}{|r|l|r|}
+\hline
+\bf \# & \bf Man"over  & \bf Konfidenz\\ \hline
+11 & links "uberholen  & \TextField[name=m11,width=0.1\linewidth]{} \%\\ \hline
+12 & links "uberholen  & \TextField[name=m12,width=0.1\linewidth]{} \%\\ \hline
+13 & links "uberholen  & \TextField[name=m13,width=0.1\linewidth]{} \%\\ \hline
+14 & links "uberholen  & \TextField[name=m14,width=0.1\linewidth]{} \%\\ \hline
+15 & rechts "uberholen & \TextField[name=m15,width=0.1\linewidth]{} \%\\ \hline
+16 & links "uberholen  & \TextField[name=m16,width=0.1\linewidth]{} \%\\ \hline
+17 & links "uberholen  & \TextField[name=m17,width=0.1\linewidth]{} \%\\ \hline
+18 & links "uberholen  & \TextField[name=m18,width=0.1\linewidth]{} \%\\ \hline
+19 & links "uberholen  & \TextField[name=m19,width=0.1\linewidth]{} \%\\ \hline
+20 & rechts "uberholen & \TextField[name=m20,width=0.1\linewidth]{} \%\\ \hline
+\end{tabular}
+\end{minipage}
+%
+\begin{minipage}[b]{\linewidth}
+\centering
+\vspace{3mm}
+\Submit{Abschicken}
+\end{minipage}
+%
+%\end{figure}
+\end{Form}
 
 \end{document}
 
