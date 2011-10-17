@@ -1,3 +1,11 @@
+* ~/.torcs/drivers/human/preferences.xml nach
+  ../../../src/drivers/human/preferences.xml
+  wegen Lenkrad-Kalibrierung.
+* in ../../../src/modules/graphic/ssggraph/graph.xml
+  den Display Mode von Player fuer human kopieren
+* in ../src/raceman/quickrace.xml als Strecke
+  alpine-2 eintragen
+
 * Strecken-Profil erstellen
         - zuerst auf Mittellinie fahren
         - Drehung/Meter-Quotient
