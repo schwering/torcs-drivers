@@ -2,6 +2,7 @@
 #define worldmodelH
 
 #include <map>
+#include <string>
 #include <vector>
 
 #include <tgfclient.h>
@@ -44,6 +45,14 @@ class cWorldModel : public cDriver::cHandler
     double lastTime;
   };
 
+  class cRedrawable
+  {
+   public:
+    virtual void redraw() = 0;
+  };
+
+  class cRedrawHookManager;
+
   class cSimplePrologSerializor : public cListener
   {
    public:
@@ -79,7 +88,7 @@ class cWorldModel : public cDriver::cHandler
     int row;
   };
 
-  class cGraphicInfoDisplay : public cListener
+  class cGraphicInfoDisplay : public cListener, cRedrawable
   {
    public:
     cGraphicInfoDisplay();
@@ -87,17 +96,13 @@ class cWorldModel : public cDriver::cHandler
     virtual void process(const cDriver& context,
                          const tCarInfo& info);
     virtual float interval() const;
+    virtual void redraw();
+
    private:
-    static const int FONT = GFUI_FONT_SMALL_C;
-    static const int RIGHT_ALIGN = GFUI_ALIGN_HL_VT;
-    static const int LEFT_ALIGN = GFUI_ALIGN_HL_VC;
-    static const int X = 80;
-    static const int COLUMN_WIDTH = 50;
-    static const int Y[5];
-    int col;
+    std::map<std::string, tCarInfo> map;
   };
 
-  class cGraphicPlanRecogDisplay : public cListener
+  class cGraphicPlanRecogDisplay : public cListener, cRedrawable
   {
    public:
     cGraphicPlanRecogDisplay();
@@ -105,7 +110,7 @@ class cWorldModel : public cDriver::cHandler
     virtual void process(const cDriver& context,
                          const tCarInfo& infos);
     virtual float interval() const;
-    void redraw();
+    virtual void redraw();
 
    private:
     struct Result {

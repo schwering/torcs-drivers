@@ -61,7 +61,7 @@ static cDriver& get_driver(int index)
         cWorldModel* wm = new cWorldModel();
         wm->addListener(new cWorldModel::cSimplePrologSerializor("/home/chs/Desktop/torcs/prolog"));
         //wm->addListener(new cWorldModel::cOffsetSerializor("/home/chs/Desktop/torcs/offset"));
-        //wm->addListener(new cWorldModel::cGraphicInfoDisplay());
+        wm->addListener(new cWorldModel::cGraphicInfoDisplay());
         wm->addListener(new cWorldModel::cGraphicPlanRecogDisplay());
         drivers[index]->addHandler(wm);
         break;

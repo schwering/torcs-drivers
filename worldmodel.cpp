@@ -281,45 +281,119 @@ float cWorldModel::cOffsetSerializor::interval() const
 }
 
 
-cWorldModel::cGraphicInfoDisplay::cGraphicInfoDisplay()
-  : col(0)
+class cWorldModel::cRedrawHookManager
 {
+ public:
+  static cRedrawHookManager& instance() {
+    return instance_;
+  }
+
+  static void redraw_hook() {
+    instance_.redraw_all();
+  }
+
+  void register_handler(cRedrawable* handler)
+  {
+    handlers[nhandlers++] = handler;
+    assert((size_t) nhandlers < sizeof(handlers) / sizeof(handlers[0]));
+    if (nhandlers > 0) {
+      ReSetRedrawHook(redraw_hook);
+    }
+  }
+
+  void unregister_handler(cRedrawable* handler)
+  {
+    int i;
+    for (i = 0; i < nhandlers; ++i) {
+      if (handlers[i] == handler) {
+        break;
+      }
+    }
+    for (i = i + 1; i < nhandlers; ++i) {
+      handlers[i-1] = handlers[i];
+    }
+    --nhandlers;
+    if (nhandlers == 0) {
+      ReSetRedrawHook(redraw_hook);
+    }
+  }
+
+  void redraw_all()
+  {
+    for (int i = 0; i < nhandlers; ++i) {
+      handlers[i]->redraw();
+    }
+  }
+
+ private:
+  static cRedrawHookManager instance_;
+
+  cRedrawHookManager() : nhandlers(0) {
+    ReSetRedrawHook(NULL);
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(cRedrawHookManager);
+
+  cRedrawable* handlers[10];
+  int nhandlers;
+};
+
+cWorldModel::cRedrawHookManager cWorldModel::cRedrawHookManager::instance_;
+
+
+cWorldModel::cGraphicInfoDisplay::cGraphicInfoDisplay()
+{
+  cRedrawHookManager::instance().register_handler(this);
 }
 
 cWorldModel::cGraphicInfoDisplay::~cGraphicInfoDisplay()
 {
+  cRedrawHookManager::instance().unregister_handler(this);
 }
-
-const int cWorldModel::cGraphicInfoDisplay::Y[] = {90, 70, 50, 30, 10};
 
 void cWorldModel::cGraphicInfoDisplay::process(
     const cDriver& context, const cWorldModel::tCarInfo& ci)
 {
+  map[ci.name] = ci;
+}
+
+void cWorldModel::cGraphicInfoDisplay::redraw()
+{
+  const int FONT = GFUI_FONT_LARGE_C;
+  const int RIGHT_ALIGN = GFUI_ALIGN_HR_VC;
+  const int LEFT_ALIGN = GFUI_ALIGN_HL_VC;
+  const int X = 10;
+  const int COLUMN_WIDTH = 75;
+  const int Y[] = {140, 115, 90, 65, 40};
+
   float *white = const_cast<float*>(colors::WHITE);
-  int i;
-  if (col == 0) {
-    i = 0;
-    GfuiPrintString("name", white, FONT, X, Y[i++], RIGHT_ALIGN);
-    GfuiPrintString("pos", white, FONT, X, Y[i++], RIGHT_ALIGN);
-    GfuiPrintString("offset", white, FONT, X, Y[i++], RIGHT_ALIGN);
-    GfuiPrintString("veloc", white, FONT, X, Y[i++], RIGHT_ALIGN);
-    GfuiPrintString("deg", white, FONT, X, Y[i++], RIGHT_ALIGN);
+  int i = 0;
+  GfuiPrintString("name", white, FONT, X, Y[i++], LEFT_ALIGN);
+  GfuiPrintString("pos", white, FONT, X, Y[i++], LEFT_ALIGN);
+  GfuiPrintString("offset", white, FONT, X, Y[i++], LEFT_ALIGN);
+  GfuiPrintString("veloc", white, FONT, X, Y[i++], LEFT_ALIGN);
+  GfuiPrintString("deg", white, FONT, X, Y[i++], LEFT_ALIGN);
+
+  int col = 0;
+  for (std::map<std::string, tCarInfo>::const_iterator it = map.begin();
+       it != map.end(); ++it)
+  {
+    const std::string& name = it->first;
+    const tCarInfo& ci = it->second;
+    int x = X + COLUMN_WIDTH + (col + 1) * COLUMN_WIDTH;
+    char buf[32];
+    int i = 0;
+    GfuiPrintString(name.c_str(), white, FONT, x, Y[i++], RIGHT_ALIGN);
+    sprintf(buf, "%.0f", ci.pos);
+    GfuiPrintString(buf, white, FONT, x, Y[i++], RIGHT_ALIGN);
+    sprintf(buf, "%.1f", ci.offset);
+    GfuiPrintString(buf, white, FONT, x, Y[i++], RIGHT_ALIGN);
+    sprintf(buf, "%.1f", ci.veloc);
+    GfuiPrintString(buf, white, FONT, x, Y[i++], RIGHT_ALIGN);
+    sprintf(buf, "%.1f", rad2deg(ci.yaw));
+    GfuiPrintString(buf, white, FONT, x, Y[i++], RIGHT_ALIGN);
+    ++col;
   }
-
-  int x = X + (col + 1) * COLUMN_WIDTH;
-  char buf[32];
-  i = 0;
-  GfuiPrintString(ci.name, white, FONT, x, Y[i++], LEFT_ALIGN);
-  sprintf(buf, "%.0f", ci.pos);
-  GfuiPrintString(buf, white, FONT, x, Y[i++], LEFT_ALIGN);
-  sprintf(buf, "%.1f", ci.offset);
-  GfuiPrintString(buf, white, FONT, x, Y[i++], LEFT_ALIGN);
-  sprintf(buf, "%.1f", ci.veloc);
-  GfuiPrintString(buf, white, FONT, x, Y[i++], LEFT_ALIGN);
-  sprintf(buf, "%.1f", rad2deg(ci.yaw));
-  GfuiPrintString(buf, white, FONT, x, Y[i++], LEFT_ALIGN);
-
-  col = (col + 1) % 2;
 }
 
 float cWorldModel::cGraphicInfoDisplay::interval() const
@@ -328,52 +402,17 @@ float cWorldModel::cGraphicInfoDisplay::interval() const
 }
 
 
-namespace plan_recog {
-
-cWorldModel::cGraphicPlanRecogDisplay* handlers[10];
-int nhandlers = 0;
-
-void register_handler(cWorldModel::cGraphicPlanRecogDisplay* handler)
-{
-  handlers[nhandlers++] = handler;
-  assert((size_t) nhandlers < sizeof(handlers) / sizeof(handlers[0]));
-}
-
-void unregister_handler(cWorldModel::cGraphicPlanRecogDisplay* handler)
-{
-  int i;
-  for (i = 0; i < nhandlers; ++i) {
-    if (handlers[i] == handler) {
-      break;
-    }
-  }
-  for (i = i + 1; i < nhandlers; ++i) {
-    handlers[i-1] = handlers[i];
-  }
-}
-
-void redraw()
-{
-  for (int i = 0; i < nhandlers; ++i) {
-    handlers[i]->redraw();
-  }
-}
-
-}
-
 cWorldModel::cGraphicPlanRecogDisplay::cGraphicPlanRecogDisplay()
   : activated(false),
     offset(0)
 {
   memset(buf, 0, sizeof(buf));
-  plan_recog::register_handler(this);
-  ReSetRedrawHook(plan_recog::redraw);
+  cRedrawHookManager::instance().register_handler(this);
 }
 
 cWorldModel::cGraphicPlanRecogDisplay::~cGraphicPlanRecogDisplay()
 {
-  ReSetRedrawHook(NULL);
-  plan_recog::unregister_handler(this);
+  cRedrawHookManager::instance().unregister_handler(this);
 }
 
 bool cWorldModel::cGraphicPlanRecogDisplay::poll_str(char* buf, int& len)

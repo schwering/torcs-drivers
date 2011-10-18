@@ -29,7 +29,9 @@ echo "Creating video."
 
 if [ -f "${DIR}/sub" ];
 then
-        SUB="-sub ${DIR}/sub"
+        #SUB="-sub ${DIR}/sub"
+        # No subtitle; plan recognition is visualized inside TORCS atm.
+        SUB=""
 else
         SUB=""
 fi

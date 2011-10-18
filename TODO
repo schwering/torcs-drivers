@@ -6,6 +6,13 @@
 * in ../src/raceman/quickrace.xml als Strecke
   alpine-2 eintragen
 
+* Offsets fuer alpine-2:
+  25    Anfang der Zielgeraden
+  800   Schikane
+  2850  hinter dem Huegel und der ersten Kurve
+  3350  vor der Kurve am Ende der Zielgeraden
+  
+
 * Strecken-Profil erstellen
         - zuerst auf Mittellinie fahren
         - Drehung/Meter-Quotient
