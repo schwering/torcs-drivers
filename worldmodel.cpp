@@ -13,9 +13,26 @@
 #include "util.h"
 
 namespace colors {
-const float WHITE[] = {1.0, 1.0, 1.0, 1.0};
-const float RED[]   = {1.0, 0.0, 0.0, 1.0};
-const float GREEN[] = {0.0, 1.0, 0.0, 1.0};
+const float WHITE[]  = {1.0, 1.0, 1.0, 1.0};
+const float RED[]    = {1.0, 0.0, 0.0, 1.0};
+const float GREEN[]  = {0.0, 1.0, 0.0, 1.0};
+const float YELLOW[] = {1.0, 1.0, 0.0, 1.0};
+}
+
+namespace fonts {
+const int F_SMALL = GFUI_FONT_LARGE_C;
+const int F_LARGE = GFUI_FONT_LARGE_C;
+const int F_BIG = GFUI_FONT_BIG_C;
+const int F_HUGE = GFUI_FONT_HUGE_C;
+
+const int F_SMALL_BOLD = GFUI_FONT_LARGE;
+const int F_LARGE_BOLD = GFUI_FONT_LARGE;
+const int F_BIG_BOLD = GFUI_FONT_BIG;
+const int F_HUGE_BOLD = GFUI_FONT_HUGE;
+
+const int ALIGN_CENTER = GFUI_ALIGN_HC_VC;
+const int ALIGN_RIGHT = GFUI_ALIGN_HR_VC;
+const int ALIGN_LEFT = GFUI_ALIGN_HL_VC;
 }
 
 int cWorldModel::priority() const {
@@ -342,6 +359,7 @@ cWorldModel::cRedrawHookManager cWorldModel::cRedrawHookManager::instance_;
 
 
 cWorldModel::cGraphicInfoDisplay::cGraphicInfoDisplay()
+  : go_enabled(false), wait_enabled(false)
 {
   cRedrawHookManager::instance().register_handler(this);
 }
@@ -352,27 +370,61 @@ cWorldModel::cGraphicInfoDisplay::~cGraphicInfoDisplay()
 }
 
 void cWorldModel::cGraphicInfoDisplay::process(
-    const cDriver& context, const cWorldModel::tCarInfo& ci)
+    const cDriver& context,
+    const std::vector<tCarInfo>& infos)
 {
-  map[ci.name] = ci;
+  bool have_human = false;
+  bool have_dummy = false;
+  tCarInfo human = tCarInfo();
+  tCarInfo dummy = tCarInfo();
+  for (std::vector<tCarInfo>::const_iterator it = infos.begin();
+       it != infos.end(); ++it) {
+    map[it->name] = *it;
+
+    if (have_dummy ||
+        (!have_human && (!strcmp(it->name, "human") ||
+                         !strcmp(it->name, "Player")))) {
+      human = *it;
+      have_human = true;
+    } else {
+      dummy = *it;
+      have_dummy = true;
+    }
+  }
+
+  const float GO_BLINK_TIME_ON = 0.5;
+  const float GO_BLINK_TIME_OFF = 0.25;
+
+  if (have_human && have_dummy) {
+    if (human.veloc <= kmph2mps(20.0) &&
+        dummy.veloc >= 15.0) {
+      const double now = dummy.time;
+      const double period = go_enabled ? GO_BLINK_TIME_OFF : GO_BLINK_TIME_ON;
+      if (now - go_time > period) {
+        go_enabled = !go_enabled;
+        go_time = now;
+      }
+    } else {
+      go_enabled = false;
+    }
+    wait_enabled = dummy.veloc < 15.0;
+  }
 }
 
 void cWorldModel::cGraphicInfoDisplay::redraw()
 {
-  const int FONT = GFUI_FONT_LARGE_C;
-  const int RIGHT_ALIGN = GFUI_ALIGN_HR_VC;
-  const int LEFT_ALIGN = GFUI_ALIGN_HL_VC;
+  const int FONT = fonts::F_LARGE;
   const int X = 10;
   const int COLUMN_WIDTH = 75;
   const int Y[] = {140, 115, 90, 65, 40};
 
   float *white = const_cast<float*>(colors::WHITE);
   int i = 0;
-  GfuiPrintString("name", white, FONT, X, Y[i++], LEFT_ALIGN);
-  GfuiPrintString("pos", white, FONT, X, Y[i++], LEFT_ALIGN);
-  GfuiPrintString("offset", white, FONT, X, Y[i++], LEFT_ALIGN);
-  GfuiPrintString("veloc", white, FONT, X, Y[i++], LEFT_ALIGN);
-  GfuiPrintString("deg", white, FONT, X, Y[i++], LEFT_ALIGN);
+  GfuiPrintString("name", white, FONT, X, Y[i++], fonts::ALIGN_LEFT);
+  GfuiPrintString("pos", white, FONT, X, Y[i++], fonts::ALIGN_LEFT);
+  GfuiPrintString("offset", white, FONT, X, Y[i++], fonts::ALIGN_LEFT);
+  GfuiPrintString("veloc", white, FONT, X, Y[i++], fonts::ALIGN_LEFT);
+  GfuiPrintString("deg", white, FONT, X, Y[i++], fonts::ALIGN_LEFT);
 
   int col = 0;
   for (std::map<std::string, tCarInfo>::const_iterator it = map.begin();
@@ -383,16 +435,27 @@ void cWorldModel::cGraphicInfoDisplay::redraw()
     int x = X + COLUMN_WIDTH + (col + 1) * COLUMN_WIDTH;
     char buf[32];
     int i = 0;
-    GfuiPrintString(name.c_str(), white, FONT, x, Y[i++], RIGHT_ALIGN);
+    GfuiPrintString(name.c_str(), white, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
     sprintf(buf, "%.0f", ci.pos);
-    GfuiPrintString(buf, white, FONT, x, Y[i++], RIGHT_ALIGN);
+    GfuiPrintString(buf, white, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
     sprintf(buf, "%.1f", ci.offset);
-    GfuiPrintString(buf, white, FONT, x, Y[i++], RIGHT_ALIGN);
+    GfuiPrintString(buf, white, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
     sprintf(buf, "%.1f", ci.veloc);
-    GfuiPrintString(buf, white, FONT, x, Y[i++], RIGHT_ALIGN);
+    GfuiPrintString(buf, white, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
     sprintf(buf, "%.1f", rad2deg(ci.yaw));
-    GfuiPrintString(buf, white, FONT, x, Y[i++], RIGHT_ALIGN);
+    GfuiPrintString(buf, white, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
     ++col;
+
+    if (wait_enabled || go_enabled) {
+      float *yellow = const_cast<float*>(colors::YELLOW);
+      float *green = const_cast<float*>(colors::GREEN);
+      float *color = go_enabled ? green : yellow;
+      const int x = 400;
+      const int y = 400;
+      const char* msg = go_enabled ? "Go get him!" : "Wait for it...";
+      GfuiPrintString(msg, color, fonts::F_HUGE_BOLD,
+                      x, y, fonts::ALIGN_CENTER);
+    }
   }
 }
 
@@ -534,13 +597,13 @@ void cWorldModel::cGraphicPlanRecogDisplay::print(
 {
   float* const color = const_cast<float*>(r.prob > 0.02 ?
                                           colors::GREEN : colors::RED);
-  const int font = small ? SMALL_FONT : BIG_FONT;
+  const int font = small ? fonts::F_SMALL: fonts::F_BIG;
   const int x = 400;
   const int y = 550 - i * 30;
   char buf[128];
   sprintf(buf, "%s: %d / %d = %.1lf%%\n",
           label, r.succs, r.total, r.prob * 100);
-  GfuiPrintString(buf, color, font, x, y, CENTER_ALIGN);
+  GfuiPrintString(buf, color, font, x, y, fonts::ALIGN_CENTER);
 }
 
 float cWorldModel::cGraphicPlanRecogDisplay::interval() const

@@ -17,6 +17,10 @@ class cWorldModel : public cDriver::cHandler
  public:
   struct tCarInfo
   {
+    tCarInfo()
+        : name(NULL), time(0.0), veloc(0.0f), accel(0.0f),
+          yaw(0.0f), pos(0.0f), offset(0.0f), laps(0) { }
+
     const char* name;
     double time;
     float veloc;
@@ -94,12 +98,15 @@ class cWorldModel : public cDriver::cHandler
     cGraphicInfoDisplay();
     virtual ~cGraphicInfoDisplay();
     virtual void process(const cDriver& context,
-                         const tCarInfo& info);
+                         const std::vector<tCarInfo>& infos);
     virtual float interval() const;
     virtual void redraw();
 
    private:
     std::map<std::string, tCarInfo> map;
+    bool go_enabled;
+    float go_time;
+    bool wait_enabled;
   };
 
   class cGraphicPlanRecogDisplay : public cListener, cRedrawable
@@ -136,10 +143,6 @@ class cWorldModel : public cDriver::cHandler
     int offset;
     Result last;
     Result best;
-
-    static const int SMALL_FONT = GFUI_FONT_LARGE_C;
-    static const int BIG_FONT = GFUI_FONT_BIG_C;
-    static const int CENTER_ALIGN = GFUI_ALIGN_HC_VT;
   };
 
   virtual ~cWorldModel() {}
