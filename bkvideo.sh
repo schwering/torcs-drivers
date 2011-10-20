@@ -1,5 +1,4 @@
 DIR=${HOME}/Desktop/torcs_captures
-FPS=$(grep ReMovieCaptureHack worldmodel.cpp | sed -e 's/^.\+(//g' | sed -e 's/);//g')
 
 scp rambo:sub "${DIR}" &&\
 scp rambo:Documents/Prolog/ccgolog/offset-*.dat "${DIR}" &&\
