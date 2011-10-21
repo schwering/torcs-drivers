@@ -104,8 +104,9 @@ class cWorldModel : public cDriver::cHandler
 
    private:
     std::map<std::string, tCarInfo> map;
+    bool init_phase;
     bool go_enabled;
-    float go_time;
+    double go_time;
     bool wait_enabled;
   };
 

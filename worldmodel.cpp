@@ -359,7 +359,10 @@ cWorldModel::cRedrawHookManager cWorldModel::cRedrawHookManager::instance_;
 
 
 cWorldModel::cGraphicInfoDisplay::cGraphicInfoDisplay()
-  : go_enabled(false), wait_enabled(false)
+  : init_phase(true),
+    go_enabled(false),
+    go_time(0.0l),
+    wait_enabled(false)
 {
   cRedrawHookManager::instance().register_handler(this);
 }
@@ -395,7 +398,7 @@ void cWorldModel::cGraphicInfoDisplay::process(
   const float GO_BLINK_TIME_ON = 0.5;
   const float GO_BLINK_TIME_OFF = 0.25;
 
-  if (have_human && have_dummy) {
+  if (init_phase && have_human && have_dummy) {
     if (human.veloc <= kmph2mps(20.0) &&
         dummy.veloc >= 15.0) {
       const double now = dummy.time;
@@ -407,7 +410,8 @@ void cWorldModel::cGraphicInfoDisplay::process(
     } else {
       go_enabled = false;
     }
-    wait_enabled = dummy.veloc < 15.0;
+    wait_enabled = go_time == 0.0l && dummy.veloc < 15.0;
+    init_phase = human.veloc <= kmph2mps(20.0);
   }
 }
 
