@@ -410,7 +410,8 @@ void cWorldModel::cGraphicInfoDisplay::process(
     } else {
       go_enabled = false;
     }
-    wait_enabled = go_time == 0.0l && dummy.veloc < 15.0;
+    wait_enabled = go_time == 0.0l &&
+                   human.veloc <= kmph2mps(20.0) && dummy.veloc < 15.0;
     init_phase = human.veloc <= kmph2mps(20.0);
   }
 }

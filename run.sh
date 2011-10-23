@@ -7,7 +7,13 @@ function vpn_connect
         if [ "${HOST}" == "rambo" -a "$(ifconfig | grep 'inet addr' | grep '13[47]')" == "" ]
         then
                 echo "Connecting to VPN"
-                sudo vpnc-connect || exit
+		if [ "$(which vpnc-connect 2>/dev/null)" != "" ]
+		then
+			sudo vpnc-connect || exit
+		elif [ "$(which vpnc 2>/dev/null)" != "" ]
+		then
+			sudo vpnc || exit
+		fi
         fi
 }
 
