@@ -171,7 +171,7 @@ void cWorldModel::cSimplePrologSerializor::process(
 
   for (std::vector<tCarInfo>::const_iterator it = infos.begin();
        it != infos.end(); ++it) {
-    activated = activated || mps2kmph(it->veloc) > 70;
+    activated = activated || mps2kmph(it->veloc) > 73;
   }
 
   if (!prev_activated && activated) {
@@ -563,6 +563,7 @@ void cWorldModel::cGraphicPlanRecogDisplay::process(
         double prob;
         if (sscanf(str, "%d / %d = %lf", &succs, &total, &prob) == 3) {
           if (activated) {
+            ++last.n;
             last.succs = succs;
             last.total = total;
             last.prob = prob;
@@ -606,8 +607,8 @@ void cWorldModel::cGraphicPlanRecogDisplay::print(
   const int x = 400;
   const int y = 550 - i * 30;
   char buf[128];
-  sprintf(buf, "%s: %d / %d = %.1lf%%\n",
-          label, r.succs, r.total, r.prob * 100);
+  sprintf(buf, "%s (#%d): %d / %d = %.1lf%%\n",
+          label, r.n, r.succs, r.total, r.prob * 100);
   GfuiPrintString(buf, color, font, x, y, fonts::ALIGN_CENTER);
 }
 

@@ -8,11 +8,13 @@ fi
 
 echo "Creating video with ${FPS} fps"
 
-scp rambo:sub "${DIR}" &&\
-scp rambo:Documents/Prolog/ccgolog/offset-*.dat "${DIR}" &&\
-ssh rambo "rm -f sub Documents/Prolog/ccgolog/offset-*.dat"
+scp rambo:out "${DIR}"
+scp rambo:sub "${DIR}"
+scp rambo:Documents/Prolog/ccgolog/trace-*.dat "${DIR}"
+ssh rambo "rm -f out sub Documents/Prolog/ccgolog/trace-*.dat"
 CURRENT=$(pwd)
-(cd /home/chs/Documents/Prolog/ccgolog/ && ./offset.sh ${DIR}/offset-*.dat || cd "$CURRENT" && exit) && cd "$CURRENT"
+(cd /home/chs/Documents/Prolog/ccgolog/ && ./pos.sh ${DIR}/trace-*.dat || cd "$CURRENT" && exit) && cd "$CURRENT"
+(cd /home/chs/Documents/Prolog/ccgolog/ && ./offset.sh ${DIR}/trace-*.dat || cd "$CURRENT" && exit) && cd "$CURRENT"
 
 for f in $(ls ${DIR}/*.pnm)
 do
