@@ -1,9 +1,10 @@
 DIR=${HOME}/Desktop/torcs_captures
 
 scp rambo:out "${DIR}"
-scp rambo:sub "${DIR}"
+scp rambo:short-info "${DIR}"
+scp rambo:stdin "${DIR}"
 scp rambo:Documents/Prolog/ccgolog/trace-*.dat "${DIR}"
-ssh rambo "rm -f out sub Documents/Prolog/ccgolog/trace-*.dat"
+ssh rambo "rm -f out short-info stdin Documents/Prolog/ccgolog/trace-*.dat"
 CURRENT=$(pwd)
 
 for I in $(seq 0 100000)

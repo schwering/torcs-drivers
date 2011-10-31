@@ -61,7 +61,7 @@ echo "HOST   = ${HOST}"
 echo "PRHOME = ${PRHOME}"
 echo "CPUS   = ${CPUS}"
 
-pr_exec rm -f ${PRHOME}/sub \&\& touch "${PRHOME}/sub" \&\& tail -f "${PRHOME}/sub" |\
+pr_exec rm -f ${PRHOME}/short-info \&\& tail --sleep-interval=0.1 -F "${PRHOME}/short-info" |\
 ../../../bin/torcs |\
-pr_exec "${PRGOLOG}/ctrl" -d "${PRGOLOG}" -l -p ${CPUS} -t 3 -v -s -f "${PRHOME}/sub" \> "${PRHOME}/out"
+pr_exec "${PRGOLOG}/ctrl" --working-dir "${PRGOLOG}" --live --cpus ${CPUS} --interval 3 --verbose --short-info "${PRHOME}/short-info" --stdin-dump "${PRHOME}/stdin" \> "${PRHOME}/out"
 

@@ -9,9 +9,10 @@ fi
 echo "Creating video with ${FPS} fps"
 
 scp rambo:out "${DIR}"
-scp rambo:sub "${DIR}"
+scp rambo:short-info "${DIR}"
+scp rambo:stdin "${DIR}"
 scp rambo:Documents/Prolog/ccgolog/trace-*.dat "${DIR}"
-ssh rambo "rm -f out sub Documents/Prolog/ccgolog/trace-*.dat"
+ssh rambo "rm -f out short-info stdin Documents/Prolog/ccgolog/trace-*.dat"
 CURRENT=$(pwd)
 (cd /home/chs/Documents/Prolog/ccgolog/ && ./pos.sh ${DIR}/trace-*.dat || cd "$CURRENT" && exit) && cd "$CURRENT"
 (cd /home/chs/Documents/Prolog/ccgolog/ && ./offset.sh ${DIR}/trace-*.dat || cd "$CURRENT" && exit) && cd "$CURRENT"
@@ -29,9 +30,9 @@ done
 
 echo "Creating video."
 
-if [ -f "${DIR}/sub" ];
+if [ -f "${DIR}/short-info" ];
 then
-        #SUB="-sub ${DIR}/sub"
+        #SUB="-sub ${DIR}/short-info"
         # No subtitle; plan recognition is visualized inside TORCS atm.
         SUB=""
 else
