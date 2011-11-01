@@ -508,7 +508,9 @@ bool cWorldModel::cGraphicPlanRecogDisplay::poll_str(char* buf, int& len)
   }
 }
 
-bool cWorldModel::cGraphicPlanRecogDisplay::poll_line(char* buf, int& offset, int len)
+bool cWorldModel::cGraphicPlanRecogDisplay::poll_line(char* buf,
+                                                      int& offset,
+                                                      int len)
 {
   if (offset + 1 >= len) {
     fprintf(stderr, "cleaned buffer, might have ignored plan recog output\n");
@@ -547,8 +549,7 @@ void cWorldModel::cGraphicPlanRecogDisplay::process(
   if (poll_line(buf, offset, sizeof(buf))) {
     /* One or more new line(s) is/are present. The next call to poll_line(),
      * even if it fails, drops the line from the string. */
-    const char* suffix;
-    if ((suffix = strrchr(buf, '\n')) != NULL) {
+    if (strrchr(buf, '\n') != NULL) {
       for (char* str = buf; str != NULL; ) {
         while (*str == '\n') {
           ++str;
@@ -567,9 +568,13 @@ void cWorldModel::cGraphicPlanRecogDisplay::process(
             last.succs = succs;
             last.total = total;
             last.prob = prob;
-            if (prob >= best.prob) {
+            // If the heuristic is enabled, the if-condition has the following
+            // consequent: if 9/23 is followed by 9/24, it skips 9/24. But we
+            // always want x/24, if 24 is the number of processes.
+            // For this reason, the if-condition is disabled.
+            //if (prob >= best.prob) {
               best = last;
-            }
+            //}
           } else {
             fprintf(stderr, "ignoring plan recog result %d / %d = %lf, "\
                     "because it is probably from a previous run\n",
@@ -601,7 +606,6 @@ void cWorldModel::cGraphicPlanRecogDisplay::redraw()
           label, best.n, best.succs, best.total, best.prob * 100);
   print(1, false, (best.prob > 0.02 ? colors::GREEN : colors::RED), buf);
 #else
-
   const float* color = (best.prob > 0.02) ? colors::GREEN : colors::RED;
   sprintf(buf, "#%d\n", last.n);
   print(0, true, color, buf);
