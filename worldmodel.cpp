@@ -591,8 +591,9 @@ void cWorldModel::cGraphicPlanRecogDisplay::process(
 
 void cWorldModel::cGraphicPlanRecogDisplay::redraw()
 {
-  print("last", 0, true, last);
-  print("best", 1, false, best);
+  //print("last", 0, true, last);
+  //print("best", 1, false, best);
+  print("", 1, false, last);
 }
 
 void cWorldModel::cGraphicPlanRecogDisplay::print(

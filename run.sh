@@ -32,11 +32,11 @@ function init_vars
                 HOST="rambo"
                 vpn_connect || exit
                 PRHOME=$(ssh rambo 'echo ${HOME}')
-                CPUS=8
+                WORKERS=24
         else
                 HOST="$(hostname)"
                 PRHOME=${HOME}
-                CPUS=1
+                WORKERS=1
         fi
 
         PRGOLOG=${PRHOME}/Documents/Prolog/ccgolog
@@ -57,11 +57,11 @@ echo "TORCS + PlanRecog"
 
 init_vars || exit
 
-echo "HOST   = ${HOST}"
-echo "PRHOME = ${PRHOME}"
-echo "CPUS   = ${CPUS}"
+echo "HOST    = ${HOST}"
+echo "PRHOME  = ${PRHOME}"
+echo "WORKERS = ${WORKERS}"
 
-pr_exec rm -f ${PRHOME}/short-info \&\& tail --sleep-interval=0.1 -F "${PRHOME}/short-info" |\
+pr_exec rm -f ${PRHOME}/short-info \&\& tail -F "${PRHOME}/short-info" |\
 ../../../bin/torcs |\
-pr_exec "${PRGOLOG}/ctrl" --working-dir "${PRGOLOG}" --live --cpus ${CPUS} --interval 3 --verbose --short-info "${PRHOME}/short-info" --stdin-dump "${PRHOME}/stdin" \> "${PRHOME}/out"
+pr_exec "${PRGOLOG}/ctrl" --working-dir "${PRGOLOG}" --live --heuristic --workers ${WORKERS} --interval 1 --verbose --short-info "${PRHOME}/short-info" --stdin-dump "${PRHOME}/stdin" \> "${PRHOME}/out"
 

@@ -141,7 +141,7 @@ class cWorldModel : public cDriver::cHandler
     static void print(const char* label, int i, bool small, const Result& r);
 
     bool activated;
-    char buf[256];
+    char buf[4096];
     int offset;
     Result last;
     Result best;
