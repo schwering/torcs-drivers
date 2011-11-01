@@ -138,7 +138,10 @@ class cWorldModel : public cDriver::cHandler
      * returns true if a complete line is in the buffer. */
     static bool poll_line(char* buf, int& offset, int len);
 
-    static void print(const char* label, int i, bool small, const Result& r);
+    static void print(int line,
+                      bool small,
+                      const float* color,
+                      const char* msg);
 
     bool activated;
     char buf[4096];

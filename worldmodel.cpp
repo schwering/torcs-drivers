@@ -15,7 +15,7 @@
 namespace colors {
 const float WHITE[]  = {1.0, 1.0, 1.0, 1.0};
 const float RED[]    = {1.0, 0.0, 0.0, 1.0};
-const float GREEN[]  = {0.0, 1.0, 0.0, 1.0};
+const float GREEN[]  = {0.0, 0.9, 0.0, 1.0};
 const float YELLOW[] = {1.0, 1.0, 0.0, 1.0};
 }
 
@@ -591,26 +591,36 @@ void cWorldModel::cGraphicPlanRecogDisplay::process(
 
 void cWorldModel::cGraphicPlanRecogDisplay::redraw()
 {
-  //print("last", 0, true, last);
-  //print("best", 1, false, best);
-  print("", 1, false, last);
+  char buf[64];
+#if 0
+  sprintf(buf, "%s (#%d): %d / %d = %.1lf%%\n",
+          label, last.n, last.succs, last.total, last.prob * 100);
+  print(0, true, (last.prob > 0.02 ? colors::GREEN : colors::RED), buf);
+
+  sprintf(buf, "%s (#%d): %d / %d = %.1lf%%\n",
+          label, best.n, best.succs, best.total, best.prob * 100);
+  print(1, false, (best.prob > 0.02 ? colors::GREEN : colors::RED), buf);
+#else
+
+  const float* color = (best.prob > 0.02) ? colors::GREEN : colors::RED;
+  sprintf(buf, "#%d\n", last.n);
+  print(0, true, color, buf);
+
+  sprintf(buf, "%d / %d = %.1lf%%\n", best.succs, best.total, best.prob * 100);
+  print(1, false, (best.prob > 0.02 ? colors::GREEN : colors::RED), buf);
+#endif
 }
 
-void cWorldModel::cGraphicPlanRecogDisplay::print(
-    const char* label,
-    int i,
-    bool small,
-    const cWorldModel::cGraphicPlanRecogDisplay::Result& r)
+void cWorldModel::cGraphicPlanRecogDisplay::print(int line,
+                                                  bool small,
+                                                  const float* color,
+                                                  const char* msg)
 {
-  float* const color = const_cast<float*>(r.prob > 0.02 ?
-                                          colors::GREEN : colors::RED);
   const int font = small ? fonts::F_SMALL: fonts::F_BIG;
   const int x = 400;
-  const int y = 550 - i * 30;
-  char buf[128];
-  sprintf(buf, "%s (#%d): %d / %d = %.1lf%%\n",
-          label, r.n, r.succs, r.total, r.prob * 100);
-  GfuiPrintString(buf, color, font, x, y, fonts::ALIGN_CENTER);
+  const int y = 550 - line * 45;
+  GfuiPrintString(msg, const_cast<float*>(color), font, x, y,
+                  fonts::ALIGN_CENTER);
 }
 
 float cWorldModel::cGraphicPlanRecogDisplay::interval() const
