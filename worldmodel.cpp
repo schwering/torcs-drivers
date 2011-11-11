@@ -172,6 +172,7 @@ void cWorldModel::cSimplePrologSerializor::process(
   for (std::vector<tCarInfo>::const_iterator it = infos.begin();
        it != infos.end(); ++it) {
     activated = activated || mps2kmph(it->veloc) > 73;
+    activated = activated || mps2kmph(it->veloc) > 10;
   }
 
   if (!prev_activated && activated) {
@@ -421,7 +422,7 @@ void cWorldModel::cGraphicInfoDisplay::redraw()
   const int FONT = fonts::F_LARGE;
   const int X = 10;
   const int COLUMN_WIDTH = 75;
-  const int Y[] = {140, 115, 90, 65, 40};
+  const int Y[] = {165, 140, 115, 90, 65, 40};
 
   float *white = const_cast<float*>(colors::WHITE);
   int i = 0;
@@ -429,6 +430,7 @@ void cWorldModel::cGraphicInfoDisplay::redraw()
   GfuiPrintString("pos", white, FONT, X, Y[i++], fonts::ALIGN_LEFT);
   GfuiPrintString("offset", white, FONT, X, Y[i++], fonts::ALIGN_LEFT);
   GfuiPrintString("veloc", white, FONT, X, Y[i++], fonts::ALIGN_LEFT);
+  GfuiPrintString("accel", white, FONT, X, Y[i++], fonts::ALIGN_LEFT);
   GfuiPrintString("deg", white, FONT, X, Y[i++], fonts::ALIGN_LEFT);
 
   int col = 0;
@@ -446,6 +448,8 @@ void cWorldModel::cGraphicInfoDisplay::redraw()
     sprintf(buf, "%.1f", ci.offset);
     GfuiPrintString(buf, white, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
     sprintf(buf, "%.1f", ci.veloc);
+    GfuiPrintString(buf, white, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
+    sprintf(buf, "%.1f", ci.accel);
     GfuiPrintString(buf, white, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
     sprintf(buf, "%.1f", rad2deg(ci.yaw));
     GfuiPrintString(buf, white, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
