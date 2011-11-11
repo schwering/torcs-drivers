@@ -4,7 +4,7 @@ REMOTE=1
 
 function vpn_connect
 {
-        if [ "${HOST}" == "rambo" -a "$(ifconfig | grep 'inet addr' | grep '13[47]')" == "" ]
+        if [ "${HOST}" == "rambo" -a "$(ifconfig | grep 'inet addr' | grep '13[47]')" == "" -a "$(ifconfig | grep 'inet addr' | grep '172.16.')" == "" ]
         then
                 echo "Connecting to VPN"
 		if [ "$(which vpnc-connect 2>/dev/null)" != "" ]
@@ -63,5 +63,5 @@ echo "WORKERS = ${WORKERS}"
 
 pr_exec rm -f ${PRHOME}/short-info \&\& tail -F "${PRHOME}/short-info" |\
 ../../../bin/torcs |\
-pr_exec "${PRGOLOG}/ctrl" --working-dir "${PRGOLOG}" --live --heuristic --workers ${WORKERS} --interval 1 --verbose --short-info "${PRHOME}/short-info" --stdin-dump "${PRHOME}/stdin" \> "${PRHOME}/out"
+pr_exec "${PRGOLOG}/ctrl" --working-dir "${PRGOLOG}" --module "cs2" --live --heuristic --workers ${WORKERS} --interval 1 --verbose --short-info "${PRHOME}/short-info" --stdin-dump "${PRHOME}/stdin" \> "${PRHOME}/out"
 
