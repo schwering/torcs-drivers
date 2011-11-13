@@ -17,6 +17,7 @@
 #include "driver.h"
 #include "abs.h"
 #include "autothrottle.h"
+#include "delay.h"
 #include "minithrottle.h"
 #include "simpledriver.h"
 #include "transmission.h"
@@ -38,6 +39,15 @@ static void endRace(int index, tCarElt* car, tSituation* s);
 static void shutdown(int index);
 static int initFuncPt(int index, void* pt);
 
+static cWorldModel* make_world_model()
+{
+  cWorldModel* wm = new cWorldModel();
+  wm->addListener(new cWorldModel::cSimplePrologSerializor("/home/chs/Desktop/torcs/prolog"));
+  //wm->addListener(new cWorldModel::cOffsetSerializor("/home/chs/Desktop/torcs/offset"));
+  wm->addListener(new cWorldModel::cGraphicInfoDisplay());
+  wm->addListener(new cWorldModel::cGraphicPlanRecogDisplay());
+  return wm;
+}
 
 /* Configure the index-th driver and return it. */
 static cDriver& get_driver(int index)
@@ -57,24 +67,15 @@ static cDriver& get_driver(int index)
       }
       case 1: {
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_RIGHT));
-        drivers[index]->addHandler(new cMiniThrottle(60.0f));
-        cWorldModel* wm = new cWorldModel();
-        wm->addListener(new cWorldModel::cSimplePrologSerializor("/home/chs/Desktop/torcs/prolog"));
-        //wm->addListener(new cWorldModel::cOffsetSerializor("/home/chs/Desktop/torcs/offset"));
-        wm->addListener(new cWorldModel::cGraphicInfoDisplay());
-        wm->addListener(new cWorldModel::cGraphicPlanRecogDisplay());
-        drivers[index]->addHandler(wm);
+        drivers[index]->addHandler(new cMiniThrottle(50.0f));
+        drivers[index]->addHandler(make_world_model());
         break;
       }
       case 2: {
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_LEFT));
         drivers[index]->addHandler(new cMiniThrottle(60.0f));
-        cWorldModel* wm = new cWorldModel();
-        wm->addListener(new cWorldModel::cSimplePrologSerializor("/home/chs/Desktop/torcs/prolog"));
-        //wm->addListener(new cWorldModel::cOffsetSerializor("/home/chs/Desktop/torcs/offset"));
-        wm->addListener(new cWorldModel::cGraphicInfoDisplay());
-        wm->addListener(new cWorldModel::cGraphicPlanRecogDisplay());
-        drivers[index]->addHandler(wm);
+        drivers[index]->addHandler(new cDelay(10));
+        //drivers[index]->addHandler(make_world_model());
         break;
       }
       case 3: {

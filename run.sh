@@ -32,7 +32,7 @@ function init_vars
                 HOST="rambo"
                 vpn_connect || exit
                 PRHOME=$(ssh rambo 'echo ${HOME}')
-                WORKERS=24
+                WORKERS=8
         else
                 HOST="$(hostname)"
                 PRHOME=${HOME}
