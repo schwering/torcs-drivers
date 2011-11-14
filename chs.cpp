@@ -68,14 +68,14 @@ static cDriver& get_driver(int index)
       case 1: {
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_RIGHT));
         drivers[index]->addHandler(new cMiniThrottle(50.0f));
-        drivers[index]->addHandler(make_world_model());
+        //drivers[index]->addHandler(make_world_model());
         break;
       }
       case 2: {
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_LEFT));
         drivers[index]->addHandler(new cMiniThrottle(60.0f));
-        drivers[index]->addHandler(new cDelay(10));
-        //drivers[index]->addHandler(make_world_model());
+        drivers[index]->addHandler(new cDelay(5));
+        drivers[index]->addHandler(make_world_model());
         break;
       }
       case 3: {

@@ -167,24 +167,27 @@ void cWorldModel::cSimplePrologSerializor::process(
   }
   */
 
-  bool prev_activated = activated;
+  const bool prev_activated = activated;
 
-  for (std::vector<tCarInfo>::const_iterator it = infos.begin();
-       it != infos.end(); ++it) {
-    activated = activated || mps2kmph(it->veloc) > 73;
-    activated = activated || (!strcmp(it->name, "human") && mps2kmph(it->veloc) > 10);
+  if (!prev_activated) {
+    for (std::vector<tCarInfo>::const_iterator it = infos.begin();
+         it != infos.end(); ++it) {
+      activated = activated || mps2kmph(it->veloc) > 73;
+      activated = activated || (!strcmp(it->name, "human") && mps2kmph(it->veloc) > 10);
+    }
   }
 
   if (!prev_activated && activated) {
-      ReMovieCaptureHack(0);
-      FILE *fps[] = { stdout, fp };
-      for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
-        fprintf(fps[i], ":- module(obs).\n");
-        fprintf(fps[i], ":- export(obs/2).\n");
-        fprintf(fps[i], "\n");
-        fprintf(fps[i], "%% BeginOfRecord\n\n");
-        fflush(fps[i]);
-      }
+    fprintf(stderr, "Starting to observe.\n");
+    ReMovieCaptureHack(0);
+    FILE *fps[] = { stdout, fp };
+    for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
+      fprintf(fps[i], ":- module(obs).\n");
+      fprintf(fps[i], ":- export(obs/2).\n");
+      fprintf(fps[i], "\n");
+      fprintf(fps[i], "%% BeginOfRecord\n\n");
+      fflush(fps[i]);
+    }
   }
 
   if (activated) {
@@ -385,13 +388,12 @@ void cWorldModel::cGraphicInfoDisplay::process(
        it != infos.end(); ++it) {
     map[it->name] = *it;
 
-    if (have_dummy ||
-        (!have_human && (!strcmp(it->name, "human") ||
-                         !strcmp(it->name, "Player")))) {
+    if (!have_human && (!strcmp(it->name, "human") ||
+                         !strcmp(it->name, "Player"))) {
       human = *it;
       have_human = true;
     } else {
-      dummy = *it;
+      dummy = (dummy.veloc > it->veloc) ? dummy : *it;
       have_dummy = true;
     }
   }
@@ -400,8 +402,7 @@ void cWorldModel::cGraphicInfoDisplay::process(
   const float GO_BLINK_TIME_OFF = 0.25;
 
   if (init_phase && have_human && have_dummy) {
-    if (human.veloc <= kmph2mps(20.0) &&
-        dummy.veloc >= 15.0) {
+    if (human.veloc <= kmph2mps(20.0) && dummy.veloc >= 15.0) {
       const double now = dummy.time;
       const double period = go_enabled ? GO_BLINK_TIME_OFF : GO_BLINK_TIME_ON;
       if (now - go_time > period) {
