@@ -1,0 +1,17 @@
+Um von Ueberholmanoever auf kritisches Manoever umzustellen, ist folgendes zu tun:
+
+1. drivers/chs/chs.cpp:70 auskommentieren,
+   drivers/chs/chs.cpp:70 aktivieren,
+   damit chs-1 nicht zu schnell faehrt
+2. drivers/chs/worldmodel.cpp:176 aktivieren,
+   damit Observationen bei 10 km/h beginnen.
+3. drivers/human/human.cpp:27 aktiveren,
+   drivers/human/human.cpp:28 auskommentieren,
+   damit die Beschleunigung statt Geschwindigkeit gedrosselt wird.
+4. ccgolog/cs2.ecl:1142 auskommentieren,
+   ccgolog/cs2.ecl:1143 aktivieren,
+   damit das richtige Programm und der richtige Filter ausgewaehlt werden.
+
+5. Als Auto statt car7-trb1 den historischen Alpine waehlen.
+6. Als Fahrer chs-1 und chs-2 statt nur chs-1 waehlen.
+
