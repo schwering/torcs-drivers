@@ -8,10 +8,8 @@ Um von Ueberholmanoever auf kritisches Manoever umzustellen, ist folgendes zu tu
 3. drivers/human/human.cpp:27 aktiveren,
    drivers/human/human.cpp:28 auskommentieren,
    damit die Beschleunigung statt Geschwindigkeit gedrosselt wird.
-4. ccgolog/cs2.ecl:1142 auskommentieren,
-   ccgolog/cs2.ecl:1143 aktivieren,
-   damit das richtige Programm und der richtige Filter ausgewaehlt werden.
+5. run:sh:66 --scenario auf critical statt overtake setzen.
 
-5. Als Auto statt car7-trb1 den historischen Alpine waehlen.
-6. Als Fahrer chs-1 und chs-2 statt nur chs-1 waehlen.
+6. Als Auto statt car7-trb1 den historischen Alpine waehlen.
+7. Als Fahrer chs-1 und chs-2 statt nur chs-1 waehlen.
 

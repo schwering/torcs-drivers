@@ -32,7 +32,7 @@ function init_vars
                 HOST="rambo"
                 vpn_connect || exit
                 PRHOME=$(ssh rambo 'echo ${HOME}')
-                WORKERS=8
+                WORKERS=24
         else
                 HOST="$(hostname)"
                 PRHOME=${HOME}
@@ -63,5 +63,5 @@ echo "WORKERS = ${WORKERS}"
 
 pr_exec rm -f ${PRHOME}/short-info \&\& tail -F "${PRHOME}/short-info" |\
 ../../../bin/torcs |\
-pr_exec "${PRGOLOG}/ctrl" --working-dir "${PRGOLOG}" --module "cs2" --live --heuristic --workers ${WORKERS} --interval 1 --verbose --short-info "${PRHOME}/short-info" --stdin-dump "${PRHOME}/stdin" \> "${PRHOME}/out"
+pr_exec "${PRGOLOG}/ctrl" --working-dir "${PRGOLOG}" --module "cs2" --scenario "critical" --live --heuristic --workers ${WORKERS} --interval 1 --verbose --short-info "${PRHOME}/short-info" --stdin-dump "${PRHOME}/stdin" \> "${PRHOME}/out"
 

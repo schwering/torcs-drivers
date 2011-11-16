@@ -564,22 +564,16 @@ void cWorldModel::cGraphicPlanRecogDisplay::process(
           *next = '\0';
         }
 
+        int i;
         int succs;
         int total;
         double prob;
-        if (sscanf(str, "%d / %d = %lf", &succs, &total, &prob) == 3) {
+        if (sscanf(str, "%d: %d / %d = %lf", &i, &succs, &total, &prob) == 4) {
           if (activated) {
-            ++last.n;
-            last.succs = succs;
-            last.total = total;
-            last.prob = prob;
-            // If the heuristic is enabled, the if-condition has the following
-            // consequent: if 9/23 is followed by 9/24, it skips 9/24. But we
-            // always want x/24, if 24 is the number of processes.
-            // For this reason, the if-condition is disabled.
-            //if (prob >= best.prob) {
-              best = last;
-            //}
+            ++(result[i].n);
+            result[i].succs = succs;
+            result[i].total = total;
+            result[i].prob = prob;
           } else {
             fprintf(stderr, "ignoring plan recog result %d / %d = %lf, "\
                     "because it is probably from a previous run\n",
@@ -602,22 +596,18 @@ void cWorldModel::cGraphicPlanRecogDisplay::process(
 void cWorldModel::cGraphicPlanRecogDisplay::redraw()
 {
   char buf[64];
-#if 0
-  sprintf(buf, "%s (#%d): %d / %d = %.1lf%%\n",
-          label, last.n, last.succs, last.total, last.prob * 100);
-  print(0, true, (last.prob > 0.02 ? colors::GREEN : colors::RED), buf);
 
-  sprintf(buf, "%s (#%d): %d / %d = %.1lf%%\n",
-          label, best.n, best.succs, best.total, best.prob * 100);
-  print(1, false, (best.prob > 0.02 ? colors::GREEN : colors::RED), buf);
-#else
-  const float* color = (best.prob > 0.02) ? colors::GREEN : colors::RED;
-  sprintf(buf, "#%d\n", last.n);
-  print(0, true, color, buf);
+  sprintf(buf, "#%d\n", result[0].n);
+  print(0, true, colors::YELLOW, buf);
 
-  sprintf(buf, "%d / %d = %.1lf%%\n", best.succs, best.total, best.prob * 100);
-  print(1, false, (best.prob > 0.02 ? colors::GREEN : colors::RED), buf);
-#endif
+  for (int i = 0; i < (int) sizeof(result) / sizeof(result[0]); ++i) {
+    if (result[i].succs != -1 || result[i].total != -1) {
+      sprintf(buf, "%d / %d = %.1lf%%\n",
+              result[i].succs, result[i].total, result[i].prob * 100);
+      print(i+1, false, (result[i].prob > 0.02 ? colors::GREEN : colors::RED),
+            buf);
+    }
+  }
 }
 
 void cWorldModel::cGraphicPlanRecogDisplay::print(int line,

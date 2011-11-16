@@ -146,8 +146,7 @@ class cWorldModel : public cDriver::cHandler
     bool activated;
     char buf[4096];
     int offset;
-    Result last;
-    Result best;
+    Result result[2];
   };
 
   virtual ~cWorldModel() {}
