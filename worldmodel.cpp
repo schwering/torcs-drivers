@@ -119,7 +119,7 @@ cWorldModel::cSimplePrologSerializor::cSimplePrologSerializor(const char *name)
     activated(false),
     virtualStart(-1.0)
 {
-  mouseInfo = GfctrlMouseInit();
+  //mouseInfo = GfctrlMouseInit();
 }
 
 cWorldModel::cSimplePrologSerializor::~cSimplePrologSerializor()
@@ -127,11 +127,12 @@ cWorldModel::cSimplePrologSerializor::~cSimplePrologSerializor()
   ReMovieCaptureHack(0);
   FILE *fps[] = { stdout, fp };
   for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
-    fprintf(fps[i], "\n%% EndOfRecord\n\n");
-    fflush(fps[i]);
+    if (fps[i]) {
+      fprintf(fps[i], "\n%% EndOfRecord\n\n");
+      fflush(fps[i]);
+    }
   }
-  fclose(fp);
-  GfctrlMouseRelease(mouseInfo);
+  //GfctrlMouseRelease(mouseInfo);
 }
 
 void cWorldModel::cSimplePrologSerializor::process(
@@ -182,17 +183,17 @@ void cWorldModel::cSimplePrologSerializor::process(
     ReMovieCaptureHack(0);
     FILE *fps[] = { stdout, fp };
     for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
-      fprintf(fps[i], ":- module(obs).\n");
-      fprintf(fps[i], ":- export(obs/2).\n");
-      fprintf(fps[i], "\n");
-      fprintf(fps[i], "%% BeginOfRecord\n\n");
-      fflush(fps[i]);
+      if (fps[i]) {
+        fprintf(fps[i], ":- module(obs).\n");
+        fprintf(fps[i], ":- export(obs/2).\n");
+        fprintf(fps[i], "\n");
+        fprintf(fps[i], "%% BeginOfRecord\n\n");
+        fflush(fps[i]);
+      }
     }
   }
 
   if (activated) {
-    FILE *fps[] = { stdout, fp };
-
     /* Cars start before the starting line and therefore with a high position,
      * that is, the sequence of positions could be 2900, 3000, 3100, 100, 200.
      * These discontiguous don't fit our simple driving model in basic action
@@ -218,8 +219,12 @@ void cWorldModel::cSimplePrologSerializor::process(
       assert(virtualStart >= 0.0);
     }
 
+    FILE *fps[] = { stdout, fp };
     for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
       FILE *fp = fps[i];
+      if (!fp) {
+        continue;
+      }
       for (std::vector<tCarInfo>::const_iterator it = infos.begin();
            it != infos.end(); ++it) {
         char nameTerm[32];

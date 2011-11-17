@@ -70,6 +70,10 @@ inline FILE *fopen_next(const char *name, const char *extension) {
   }
   FILE *fp = (found) ? fopen(new_name, "w") : NULL;
   delete[] new_name;
+  if (!fp) {
+    fprintf(stderr, "could not open file '%s' with extension '%s'\n",
+            name, extension);
+  }
   return fp;
 }
 
