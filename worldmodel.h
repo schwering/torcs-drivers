@@ -146,7 +146,8 @@ class cWorldModel : public cDriver::cHandler
     bool activated;
     char buf[4096];
     int offset;
-    Result result[2];
+    int n_updates;
+    std::map<std::string, Result> results;
   };
 
   virtual ~cWorldModel() {}

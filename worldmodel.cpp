@@ -12,6 +12,8 @@
 #include "macros.h"
 #include "util.h"
 
+#define MAXPROGLEN 512
+
 namespace colors {
 const float WHITE[]  = {1.0, 1.0, 1.0, 1.0};
 const float RED[]    = {1.0, 0.0, 0.0, 1.0};
@@ -482,7 +484,8 @@ float cWorldModel::cGraphicInfoDisplay::interval() const
 
 cWorldModel::cGraphicPlanRecogDisplay::cGraphicPlanRecogDisplay()
   : activated(false),
-    offset(0)
+    offset(0),
+    n_updates(0)
 {
   memset(buf, 0, sizeof(buf));
   cRedrawHookManager::instance().register_handler(this);
@@ -569,20 +572,26 @@ void cWorldModel::cGraphicPlanRecogDisplay::process(
           *next = '\0';
         }
 
-        int i;
+        char prog_name[MAXPROGLEN+1];
         int succs;
         int total;
         double prob;
-        if (sscanf(str, "%d: %d / %d = %lf", &i, &succs, &total, &prob) == 4) {
+        if (sscanf(str, "%s %d / %d = %lf",
+                   prog_name, &succs, &total, &prob) == 4) {
           if (activated) {
-            ++(result[i].n);
-            result[i].succs = succs;
-            result[i].total = total;
-            result[i].prob = prob;
+            int len = strlen(prog_name);
+            if (prog_name[len-1] == ':') {
+              prog_name[len-1] = '\0';
+            }
+            Result& r = results[prog_name];
+            ++n_updates;
+            r.succs = succs;
+            r.total = total;
+            r.prob = prob;
           } else {
-            fprintf(stderr, "ignoring plan recog result %d / %d = %lf, "\
-                    "because it is probably from a previous run\n",
-                    succs, total, prob);
+            fprintf(stderr, "ignoring plan recog result %d / %d = %lf"\
+                    "for %s, because it is probably from a previous run\n",
+                    succs, total, prob, prog_name);
             fflush(stderr);
           }
         }
@@ -602,15 +611,20 @@ void cWorldModel::cGraphicPlanRecogDisplay::redraw()
 {
   char buf[64];
 
-  sprintf(buf, "#%d\n", result[0].n);
+  sprintf(buf, "#%d\n", n_updates);
   print(0, true, colors::YELLOW, buf);
 
-  for (int i = 0; i < (int) sizeof(result) / sizeof(result[0]); ++i) {
-    if (result[i].succs != -1 || result[i].total != -1) {
-      sprintf(buf, "%d / %d = %.1lf%%\n",
-              result[i].succs, result[i].total, result[i].prob * 100);
-      print(i+1, false, (result[i].prob > 0.02 ? colors::GREEN : colors::RED),
-            buf);
+  int index = 1;
+  for (std::map<std::string, Result>::const_iterator it = results.begin();
+       it != results.end(); ++it)
+  {
+    const std::string& s = it->first;
+    const Result& r = it->second;
+    if (r.succs != -1 || r.total != -1) {
+      sprintf(buf, "%s: %d / %d = %.1lf%%\n",
+              s.c_str(), r.succs, r.total, r.prob * 100);
+      print(index, false, (r.prob > 0.02 ? colors::GREEN : colors::RED), buf);
+      ++index;
     }
   }
 }
