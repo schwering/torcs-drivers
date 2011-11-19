@@ -22,7 +22,8 @@ const float YELLOW[] = {1.0, 1.0, 0.0, 1.0};
 }
 
 namespace fonts {
-const int F_SMALL = GFUI_FONT_LARGE_C;
+const int F_SMALL = GFUI_FONT_MEDIUM_C;
+const int F_MEDIUM = GFUI_FONT_LARGE_C;
 const int F_LARGE = GFUI_FONT_LARGE_C;
 const int F_BIG = GFUI_FONT_BIG_C;
 const int F_HUGE = GFUI_FONT_HUGE_C;
@@ -425,14 +426,20 @@ void cWorldModel::cGraphicInfoDisplay::process(
   }
 }
 
+#define NLINES 6
 void cWorldModel::cGraphicInfoDisplay::redraw()
 {
-  const int FONT = fonts::F_LARGE;
+  const int FONT = fonts::F_SMALL;
   const int X = 10;
-  const int COLUMN_WIDTH = 75;
-  const int Y[] = {165, 140, 115, 90, 65, 40};
+  const int COLUMN_WIDTH = 50;
+  int Y[NLINES];
 
-  float *white = const_cast<float*>(colors::WHITE);
+  Y[NLINES - 1] = 40;
+  for (int i = NLINES - 2; i >= 0; --i) {
+    Y[i] = Y[i+1] + 25;
+  }
+
+  float *white = const_cast<float*>(colors::YELLOW);
   int i = 0;
   GfuiPrintString("name", white, FONT, X, Y[i++], fonts::ALIGN_LEFT);
   GfuiPrintString("pos", white, FONT, X, Y[i++], fonts::ALIGN_LEFT);
@@ -634,7 +641,7 @@ void cWorldModel::cGraphicPlanRecogDisplay::print(int line,
                                                   const float* color,
                                                   const char* msg)
 {
-  const int font = small ? fonts::F_SMALL: fonts::F_BIG;
+  const int font = small ? fonts::F_MEDIUM: fonts::F_BIG;
   const int x = 400;
   const int y = 550 - line * 45;
   GfuiPrintString(msg, const_cast<float*>(color), font, x, y,
