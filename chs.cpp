@@ -23,6 +23,8 @@
 #include "transmission.h"
 #include "worldmodel.h"
 
+#include "../scenario.h"
+
 #define MAX_BOTS 10
 
 cDriver* drivers[MAX_BOTS] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
@@ -67,8 +69,12 @@ static cDriver& get_driver(int index)
       }
       case 1: {
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_RIGHT));
+#ifdef DA_ACCEL_LIMIT
+        drivers[index]->addHandler(new cMiniThrottle(50.0f));
+#endif
+#ifdef DA_SPEED_LIMIT
         drivers[index]->addHandler(new cMiniThrottle(60.0f));
-        //drivers[index]->addHandler(new cMiniThrottle(50.0f));
+#endif
         drivers[index]->addHandler(make_world_model());
         break;
       }

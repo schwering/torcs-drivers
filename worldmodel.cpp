@@ -12,6 +12,8 @@
 #include "macros.h"
 #include "util.h"
 
+#include "../scenario.h"
+
 #define MAXPROGLEN 512
 
 namespace colors {
@@ -177,7 +179,9 @@ void cWorldModel::cSimplePrologSerializor::process(
     for (std::vector<tCarInfo>::const_iterator it = infos.begin();
          it != infos.end(); ++it) {
       activated = activated || mps2kmph(it->veloc) > 73;
-      //activated = activated || (!strcmp(it->name, "human") && mps2kmph(it->veloc) > 10);
+#ifdef DA_ACCEL_LIMIT
+      activated = activated || (!strcmp(it->name, "human") && mps2kmph(it->veloc) > 10);
+#endif
     }
   }
 
