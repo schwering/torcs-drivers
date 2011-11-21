@@ -67,8 +67,8 @@ static cDriver& get_driver(int index)
       }
       case 1: {
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_RIGHT));
-        //drivers[index]->addHandler(new cMiniThrottle(60.0f));
-        drivers[index]->addHandler(new cMiniThrottle(50.0f));
+        drivers[index]->addHandler(new cMiniThrottle(60.0f));
+        //drivers[index]->addHandler(new cMiniThrottle(50.0f));
         drivers[index]->addHandler(make_world_model());
         break;
       }
