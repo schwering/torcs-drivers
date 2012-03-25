@@ -10,6 +10,7 @@ ROBOT       = chs
 MODULE      = ${ROBOT}.so
 MODULEDIR   = drivers/${ROBOT}
 SOURCES     = ${ROBOT}.cpp driver.cpp trackprofile.cpp simpledriver.cpp transmission.cpp autothrottle.cpp minithrottle.cpp abs.cpp worldmodel.cpp image.cpp pnmimage.cpp delay.cpp
+LIBS	    = -lpr
 
 SHIPDIR     = drivers/${ROBOT}
 SHIP        = ${ROBOT}.xml logo.rgb
@@ -19,3 +20,4 @@ src-robots-chs_PKGFILES = $(shell find * -maxdepth 0 -type f -print)
 src-robots-chs_PKGDIR   = ${PACKAGE}-${VERSION}/$(subst ${TORCS_BASE},,$(shell pwd))
 
 include ${MAKE_DEFAULT}
+

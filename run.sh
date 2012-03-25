@@ -2,6 +2,7 @@
 
 SCENARIO_FILE="../scenario.h"
 REMOTE=1
+TORCS="/home/chs/Programs/TORCS"
 
 if [ "$1" == "-l" -o "$1" == "--local" ]
 then
@@ -71,8 +72,8 @@ echo "TORCS + PlanRecog"
 
 init_vars || exit
 
-cp ../human/human.xml.$SCENARIO ../../../share/games/torcs/drivers/human/human.xml || exit
-cp ../../raceman/quickrace.xml.$SCENARIO ../../../share/games/torcs/config/raceman/quickrace.xml || exit
+cp ../human/human.xml.$SCENARIO ${TORCS}/share/games/torcs/drivers/human/human.xml || exit
+cp ../../raceman/quickrace.xml.$SCENARIO ${TORCS}/share/games/torcs/config/raceman/quickrace.xml || exit
 
 if [ "$(grep "$SCENARIO" "$SCENARIO_FILE")" == "" ]
 then
@@ -97,6 +98,6 @@ echo "PRHOME  = ${PRHOME}"
 echo "WORKERS = ${WORKERS}"
 
 pr_exec rm -f ${PRHOME}/short-info \&\& tail -F "${PRHOME}/short-info" |\
-../../../bin/torcs |\
+${TORCS}/bin/torcs |\
 pr_exec "${PRGOLOG}/ctrl" --working-dir "${PRGOLOG}" --module "cs2" --scenario "$SCENARIO" --live --heuristic --workers ${WORKERS} --interval 1 --verbose --short-info "${PRHOME}/short-info" --stdin-dump "${PRHOME}/stdin" \> "${PRHOME}/out"
 

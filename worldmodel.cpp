@@ -5,6 +5,7 @@
 #include <poll.h>
 #include <sys/select.h>
 
+#include <planrecog.h>
 #include <raceinit.h>
 #include <raceengine.h>
 #include <tgfclient.h>
@@ -119,12 +120,69 @@ void cWorldModel::cListener::process(
 }
 
 
+class cWorldModel::cRedrawHookManager
+{
+ public:
+  static cRedrawHookManager& instance() {
+    return instance_;
+  }
+
+  static void redraw_hook() {
+    instance_.redraw_all();
+  }
+
+  void register_handler(cRedrawable* handler)
+  {
+    handlers[nhandlers++] = handler;
+    assert((size_t) nhandlers < sizeof(handlers) / sizeof(handlers[0]));
+    if (nhandlers > 0) {
+      ReSetRedrawHook(redraw_hook);
+    }
+  }
+
+  void unregister_handler(cRedrawable* handler)
+  {
+    int i;
+    for (i = 0; i < nhandlers; ++i) {
+      if (handlers[i] == handler) {
+        break;
+      }
+    }
+    for (i = i + 1; i < nhandlers; ++i) {
+      handlers[i-1] = handlers[i];
+    }
+    --nhandlers;
+    if (nhandlers == 0) {
+      ReSetRedrawHook(redraw_hook);
+    }
+  }
+
+  void redraw_all()
+  {
+    for (int i = 0; i < nhandlers; ++i) {
+      handlers[i]->redraw();
+    }
+  }
+
+ private:
+  static cRedrawHookManager instance_;
+
+  cRedrawHookManager() : nhandlers(0) {
+    ReSetRedrawHook(NULL);
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(cRedrawHookManager);
+
+  cRedrawable* handlers[10];
+  int nhandlers;
+};
+
+
 cWorldModel::cSimplePrologSerializor::cSimplePrologSerializor(const char *name)
   : fp(fopen_next(name, "ecl")),
     activated(false),
     virtualStart(-1.0)
 {
-  //mouseInfo = GfctrlMouseInit();
 }
 
 cWorldModel::cSimplePrologSerializor::~cSimplePrologSerializor()
@@ -137,6 +195,7 @@ cWorldModel::cSimplePrologSerializor::~cSimplePrologSerializor()
       fflush(fps[i]);
     }
   }
+  fclose(fp);
   //GfctrlMouseRelease(mouseInfo);
 }
 
@@ -274,6 +333,207 @@ float cWorldModel::cSimplePrologSerializor::interval() const
 }
 
 
+cWorldModel::cSimpleMercurySerializor::cSimpleMercurySerializor(const char *name)
+  : fp(fopen_next(name, "log")),
+    activated(false),
+    virtualStart(-1.0)
+{
+}
+
+cWorldModel::cSimpleMercurySerializor::~cSimpleMercurySerializor()
+{
+  ReMovieCaptureHack(0);
+  fclose(fp);
+}
+
+void cWorldModel::cSimpleMercurySerializor::process(
+    const cDriver& context,
+    const std::vector<tCarInfo>& infos)
+{
+  const bool prev_activated = activated;
+
+  if (!prev_activated) {
+    for (std::vector<tCarInfo>::const_iterator it = infos.begin();
+         it != infos.end(); ++it) {
+      activated = activated || mps2kmph(it->veloc) > 73;
+#ifdef DA_ACCEL_LIMIT
+      activated = activated || (!strcmp(it->name, "human") && mps2kmph(it->veloc) > 10);
+#endif
+    }
+  }
+
+  if (!prev_activated && activated) {
+    fprintf(stderr, "Starting to observe.\n");
+    ReMovieCaptureHack(0);
+  }
+
+  if (activated) {
+    /* Cars start before the starting line and therefore with a high position,
+     * that is, the sequence of positions could be 2900, 3000, 3100, 100, 200.
+     * These discontiguous don't fit our simple driving model in basic action
+     * theory. Therefore, we choose a virtual starting line at the minimal first
+     * measured position minus. */
+
+    if (virtualStart < 0.0) {
+      bool init = false;
+      double minPos = 0.0;
+      int minLaps = 0;
+      for (std::vector<tCarInfo>::const_iterator it = infos.begin();
+           it != infos.end(); ++it) {
+        if (!init ||
+            it->laps < minLaps ||
+            (it->laps == minLaps && it->pos < minPos)) {
+          init = true;
+          minPos = it->pos;
+          minLaps = it->laps;
+        }
+      }
+      virtualStart = minPos;
+      assert(init);
+      assert(virtualStart >= 0.0);
+    }
+
+    FILE *fps[] = { stdout, fp };
+    for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
+      FILE *fp = fps[i];
+      if (!fp) {
+        continue;
+      }
+      for (std::vector<tCarInfo>::const_iterator it = infos.begin();
+           it != infos.end(); ++it) {
+        char kind = (!prev_activated && activated) ? 'I' : 'O';
+        const char *name = (!strcmp(it->name, "human")) ? "b" : "a";
+        double veloc = it->veloc;
+        double yaw = it->yaw;
+        double x = it->pos;
+        if (x >= virtualStart) {
+          x -= virtualStart;
+        } else {
+          x += context.track->length - virtualStart;
+        }
+        double y = it->offset;
+
+        if (it == infos.begin()) {
+          fprintf(fp, "%c\t%10.5lf\t", kind, it->time);
+        }
+        fprintf(fp, "%5s\t%10.5lf\t%10.5lf\t%10.5lf\t%10.5lf", name, veloc, yaw, x, y);
+      }
+      fprintf(fp, "\n");
+      fflush(fp);
+    }
+  }
+}
+
+float cWorldModel::cSimpleMercurySerializor::interval() const
+{
+  return 0.5f;
+}
+
+
+cWorldModel::cMercuryInterface::cMercuryInterface()
+  : activated(false),
+    virtualStart(-1.0)
+{
+  cRedrawHookManager::instance().register_handler(this);
+}
+
+cWorldModel::cMercuryInterface::~cMercuryInterface()
+{
+  cRedrawHookManager::instance().unregister_handler(this);
+  ReMovieCaptureHack(0);
+}
+
+void cWorldModel::cMercuryInterface::process(
+    const cDriver& context,
+    const std::vector<tCarInfo>& infos)
+{
+  if (infos.size() != 2) {
+    return;
+  }
+
+  const bool prev_activated = activated;
+
+  if (!prev_activated) {
+    for (std::vector<tCarInfo>::const_iterator it = infos.begin();
+         it != infos.end(); ++it) {
+      activated = activated || mps2kmph(it->veloc) > 73;
+#ifdef DA_ACCEL_LIMIT
+      activated = activated || (!strcmp(it->name, "human") && mps2kmph(it->veloc) > 10);
+#endif
+    }
+  }
+
+  if (!prev_activated && activated) {
+    fprintf(stderr, "Starting to observe.\n");
+    ReMovieCaptureHack(0);
+  }
+
+  if (activated) {
+    /* Cars start before the starting line and therefore with a high position,
+     * that is, the sequence of positions could be 2900, 3000, 3100, 100, 200.
+     * These discontiguous don't fit our simple driving model in basic action
+     * theory. Therefore, we choose a virtual starting line at the minimal first
+     * measured position minus. */
+
+    if (virtualStart < 0.0) {
+      bool init = false;
+      double minPos = 0.0;
+      int minLaps = 0;
+      for (std::vector<tCarInfo>::const_iterator it = infos.begin();
+           it != infos.end(); ++it) {
+        if (!init ||
+            it->laps < minLaps ||
+            (it->laps == minLaps && it->pos < minPos)) {
+          init = true;
+          minPos = it->pos;
+          minLaps = it->laps;
+        }
+      }
+      virtualStart = minPos;
+      assert(init);
+      assert(virtualStart >= 0.0);
+    }
+
+    mercury::test();
+
+    for (std::vector<tCarInfo>::const_iterator it = infos.begin();
+         it != infos.end(); ++it) {
+      char nameTerm[32];
+      sprintf(nameTerm, "'%s'", it->name);
+
+      double pos = it->pos;
+      if (pos >= virtualStart) {
+        pos -= virtualStart;
+      } else {
+        pos += context.track->length - virtualStart;
+      }
+    }
+  }
+}
+
+void cWorldModel::cMercuryInterface::redraw()
+{
+  print(0, false, colors::GREEN, "Mercury");
+}
+
+void cWorldModel::cMercuryInterface::print(int line,
+                                           bool small,
+                                           const float* color,
+                                           const char* msg)
+{
+  const int font = small ? fonts::F_MEDIUM: fonts::F_BIG;
+  const int x = 400;
+  const int y = 550 - line * 45;
+  GfuiPrintString(msg, const_cast<float*>(color), font, x, y,
+                  fonts::ALIGN_CENTER);
+}
+
+float cWorldModel::cMercuryInterface::interval() const
+{
+  return 0.5f;
+}
+
+
 cWorldModel::cOffsetSerializor::cOffsetSerializor(const char *name)
   : img(name, WIDTH, HEIGHT),
     row(0)
@@ -313,63 +573,6 @@ float cWorldModel::cOffsetSerializor::interval() const
   return 0.0f;
 }
 
-
-class cWorldModel::cRedrawHookManager
-{
- public:
-  static cRedrawHookManager& instance() {
-    return instance_;
-  }
-
-  static void redraw_hook() {
-    instance_.redraw_all();
-  }
-
-  void register_handler(cRedrawable* handler)
-  {
-    handlers[nhandlers++] = handler;
-    assert((size_t) nhandlers < sizeof(handlers) / sizeof(handlers[0]));
-    if (nhandlers > 0) {
-      ReSetRedrawHook(redraw_hook);
-    }
-  }
-
-  void unregister_handler(cRedrawable* handler)
-  {
-    int i;
-    for (i = 0; i < nhandlers; ++i) {
-      if (handlers[i] == handler) {
-        break;
-      }
-    }
-    for (i = i + 1; i < nhandlers; ++i) {
-      handlers[i-1] = handlers[i];
-    }
-    --nhandlers;
-    if (nhandlers == 0) {
-      ReSetRedrawHook(redraw_hook);
-    }
-  }
-
-  void redraw_all()
-  {
-    for (int i = 0; i < nhandlers; ++i) {
-      handlers[i]->redraw();
-    }
-  }
-
- private:
-  static cRedrawHookManager instance_;
-
-  cRedrawHookManager() : nhandlers(0) {
-    ReSetRedrawHook(NULL);
-  }
-
-  DISALLOW_COPY_AND_ASSIGN(cRedrawHookManager);
-
-  cRedrawable* handlers[10];
-  int nhandlers;
-};
 
 cWorldModel::cRedrawHookManager cWorldModel::cRedrawHookManager::instance_;
 

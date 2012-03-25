@@ -73,6 +73,41 @@ class cWorldModel : public cDriver::cHandler
     double virtualStart;
   };
 
+  class cSimpleMercurySerializor : public cListener
+  {
+   public:
+    explicit cSimpleMercurySerializor(const char *name);
+    virtual ~cSimpleMercurySerializor();
+    virtual void process(const cDriver& context,
+                         const std::vector<tCarInfo>& infos);
+    virtual float interval() const;
+
+   private:
+    FILE *fp;
+    bool activated;
+    double virtualStart;
+  };
+
+  class cMercuryInterface : public cListener, cRedrawable
+  {
+   public:
+    explicit cMercuryInterface();
+    virtual ~cMercuryInterface();
+    virtual void process(const cDriver& context,
+                         const std::vector<tCarInfo>& infos);
+    virtual float interval() const;
+    virtual void redraw();
+
+   private:
+    static void print(int line,
+                      bool small,
+                      const float* color,
+                      const char* msg);
+
+    bool activated;
+    double virtualStart;
+  };
+
   class cOffsetSerializor : public cListener
   {
    public:
