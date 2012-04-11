@@ -5,7 +5,11 @@
 #include <poll.h>
 #include <sys/select.h>
 
+#include <obs_types.h>
+
+#if 0
 #include <planrecog.h>
+#endif
 #include <raceinit.h>
 #include <raceengine.h>
 #include <tgfclient.h>
@@ -430,17 +434,35 @@ float cWorldModel::cSimpleMercurySerializor::interval() const
 }
 
 
+#if 0
 cWorldModel::cMercuryInterface::cMercuryInterface()
   : activated(false),
     virtualStart(-1.0)
 {
   cRedrawHookManager::instance().register_handler(this);
+  printf("%s:%d\n", __FILE__, __LINE__);
+  mercury::initialize();
+  printf("%s:%d\n", __FILE__, __LINE__);
+  mercury::start_plan_recognition();
+  printf("%s:%d\n", __FILE__, __LINE__);
 }
 
 cWorldModel::cMercuryInterface::~cMercuryInterface()
 {
   cRedrawHookManager::instance().unregister_handler(this);
   ReMovieCaptureHack(0);
+  mercury::finalize();
+}
+
+double cWorldModel::cMercuryInterface::normalize_pos(const cDriver& context,
+                                                     double pos) const
+{
+  if (pos >= virtualStart) {
+    pos -= virtualStart;
+  } else {
+    pos += context.track->length - virtualStart;
+  }
+  return pos;
 }
 
 void cWorldModel::cMercuryInterface::process(
@@ -494,21 +516,17 @@ void cWorldModel::cMercuryInterface::process(
       assert(virtualStart >= 0.0);
     }
 
-    mercury::test();
-
-    for (std::vector<tCarInfo>::const_iterator it = infos.begin();
-         it != infos.end(); ++it) {
-      char nameTerm[32];
-      sprintf(nameTerm, "'%s'", it->name);
-
-      double pos = it->pos;
-      if (pos >= virtualStart) {
-        pos -= virtualStart;
-      } else {
-        pos += context.track->length - virtualStart;
-      }
-    }
+    const tCarInfo& a0 = infos[0];
+    const tCarInfo& a1 = infos[1];
+    const char* a0_name = (!strcmp(a0.name, "human")) ? "b" : "a";
+    const char* a1_name = (!strcmp(a1.name, "human")) ? "b" : "a";
+    mercury::push_obs(a0.time,
+                      a0_name, a0.veloc, a0.yaw,
+                      normalize_pos(context, a0.pos), a0.offset,
+                      a1_name, a1.veloc, a1.yaw,
+                      normalize_pos(context, a1.pos), a1.offset);
   }
+  printf("Confidence: %lf\n", mercury::confidence());
 }
 
 void cWorldModel::cMercuryInterface::redraw()
@@ -529,6 +547,142 @@ void cWorldModel::cMercuryInterface::print(int line,
 }
 
 float cWorldModel::cMercuryInterface::interval() const
+{
+  return 0.5f;
+}
+#endif
+
+
+const char* cWorldModel::cMercuryClient::MERCURY_HOST = "localhost";
+const char* cWorldModel::cMercuryClient::MERCURY_PORT = "19123";
+boost::asio::io_service cWorldModel::cMercuryClient::io_service;
+
+cWorldModel::cMercuryClient::cMercuryClient()
+  : socket(io_service),
+    activated(false),
+    virtualStart(-1.0)
+{
+  cRedrawHookManager::instance().register_handler(this);
+
+  using boost::asio::ip::tcp;
+  tcp::resolver resolver(io_service);
+  tcp::resolver::query query(tcp::v4(), MERCURY_HOST, MERCURY_PORT);
+  tcp::resolver::iterator iterator = resolver.resolve(query);
+  boost::asio::connect(socket, iterator);
+}
+
+cWorldModel::cMercuryClient::~cMercuryClient()
+{
+  cRedrawHookManager::instance().unregister_handler(this);
+  ReMovieCaptureHack(0);
+}
+
+double cWorldModel::cMercuryClient::normalize_pos(const cDriver& context,
+                                                  double pos) const
+{
+  if (pos >= virtualStart) {
+    pos -= virtualStart;
+  } else {
+    pos += context.track->length - virtualStart;
+  }
+  return pos;
+}
+
+void cWorldModel::cMercuryClient::process(
+    const cDriver& context,
+    const std::vector<tCarInfo>& infos)
+{
+  if (infos.size() != 2) {
+    return;
+  }
+
+  const bool prev_activated = activated;
+
+  if (!prev_activated) {
+    for (std::vector<tCarInfo>::const_iterator it = infos.begin();
+         it != infos.end(); ++it) {
+      activated = activated || mps2kmph(it->veloc) > 73;
+#ifdef DA_ACCEL_LIMIT
+      activated = activated || (!strcmp(it->name, "human") && mps2kmph(it->veloc) > 10);
+#endif
+    }
+  }
+
+  if (!prev_activated && activated) {
+    fprintf(stderr, "Starting to observe.\n");
+    ReMovieCaptureHack(0);
+  }
+
+  if (activated) {
+    /* Cars start before the starting line and therefore with a high position,
+     * that is, the sequence of positions could be 2900, 3000, 3100, 100, 200.
+     * These discontiguous don't fit our simple driving model in basic action
+     * theory. Therefore, we choose a virtual starting line at the minimal first
+     * measured position minus. */
+
+    if (virtualStart < 0.0) {
+      bool init = false;
+      double minPos = 0.0;
+      int minLaps = 0;
+      for (std::vector<tCarInfo>::const_iterator it = infos.begin();
+           it != infos.end(); ++it) {
+        if (!init ||
+            it->laps < minLaps ||
+            (it->laps == minLaps && it->pos < minPos)) {
+          init = true;
+          minPos = it->pos;
+          minLaps = it->laps;
+        }
+      }
+      virtualStart = minPos;
+      assert(init);
+      assert(virtualStart >= 0.0);
+    }
+
+    const tCarInfo& a0 = infos[0];
+    const tCarInfo& a1 = infos[1];
+
+    struct record r;
+    r.t = a0.time;
+
+    strncpy(r.agent0, (!strcmp(a0.name, "human")) ? "b" : "a", AGENTLEN);
+    r.veloc0 = a0.veloc;
+    r.rad0 = a0.yaw;
+    r.x0 = a0.pos;
+    r.y0 = a0.offset;
+
+    strncpy(r.agent1, (!strcmp(a1.name, "human")) ? "b" : "a", AGENTLEN);
+    r.veloc1 = a1.veloc;
+    r.rad1 = a1.yaw;
+    r.x1 = a1.pos;
+    r.y1 = a1.offset;
+
+    boost::asio::write(socket, boost::asio::buffer(&r, sizeof r));
+
+    float c;
+    boost::asio::read(socket, boost::asio::buffer(&c, sizeof c));
+    printf("Confidence: %lf\n", c);
+  }
+}
+
+void cWorldModel::cMercuryClient::redraw()
+{
+  print(0, false, colors::GREEN, "Mercury");
+}
+
+void cWorldModel::cMercuryClient::print(int line,
+                                        bool small,
+                                        const float* color,
+                                        const char* msg)
+{
+  const int font = small ? fonts::F_MEDIUM: fonts::F_BIG;
+  const int x = 400;
+  const int y = 550 - line * 45;
+  GfuiPrintString(msg, const_cast<float*>(color), font, x, y,
+                  fonts::ALIGN_CENTER);
+}
+
+float cWorldModel::cMercuryClient::interval() const
 {
   return 0.5f;
 }

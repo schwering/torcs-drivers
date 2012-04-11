@@ -100,4 +100,3 @@ echo "WORKERS = ${WORKERS}"
 pr_exec rm -f ${PRHOME}/short-info \&\& tail -F "${PRHOME}/short-info" |\
 ${TORCS}/bin/torcs |\
 pr_exec "${PRGOLOG}/ctrl" --working-dir "${PRGOLOG}" --module "cs2" --scenario "$SCENARIO" --live --heuristic --workers ${WORKERS} --interval 1 --verbose --short-info "${PRHOME}/short-info" --stdin-dump "${PRHOME}/stdin" \> "${PRHOME}/out"
-

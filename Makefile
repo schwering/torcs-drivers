@@ -6,11 +6,16 @@
 #
 ##############################################################################
 
+include /home/chs/Documents/Prolog/mercury/Make.common
+
+COMPILFLAGS = -I$(LIB_DIR)/inc
+LIBS        = -lboost_system
+#LIBS	    = -lpr
+
 ROBOT       = chs
 MODULE      = ${ROBOT}.so
 MODULEDIR   = drivers/${ROBOT}
 SOURCES     = ${ROBOT}.cpp driver.cpp trackprofile.cpp simpledriver.cpp transmission.cpp autothrottle.cpp minithrottle.cpp abs.cpp worldmodel.cpp image.cpp pnmimage.cpp delay.cpp
-LIBS	    = -lpr
 
 SHIPDIR     = drivers/${ROBOT}
 SHIP        = ${ROBOT}.xml logo.rgb

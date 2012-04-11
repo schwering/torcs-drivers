@@ -45,9 +45,10 @@ static int initFuncPt(int index, void* pt);
 static cWorldModel* make_world_model()
 {
   cWorldModel* wm = new cWorldModel();
-  //wm->addListener(new cWorldModel::cSimplePrologSerializor("/home/chs/Desktop/torcs/"));
-  wm->addListener(new cWorldModel::cSimpleMercurySerializor("/home/chs/Documents/Prolog/mercury/torcs-obs/obs"));
+  //wm->addListener(new cWorldModel::cSimplePrologSerializor("/home/chs/Desktop/torcs/obs"));
+  //wm->addListener(new cWorldModel::cSimpleMercurySerializor("/home/chs/Documents/Prolog/mercury/obs/obs"));
   //wm->addListener(new cWorldModel::cMercuryInterface());
+  wm->addListener(new cWorldModel::cMercuryClient());
   //wm->addListener(new cWorldModel::cOffsetSerializor("/home/chs/Desktop/torcs/offset"));
   wm->addListener(new cWorldModel::cGraphicInfoDisplay());
   wm->addListener(new cWorldModel::cGraphicPlanRecogDisplay());
@@ -118,8 +119,6 @@ int chs(tModInfo* modInfo)
 /* Module interface initialization. */
 static int initFuncPt(int index, void* pt)
 {
-  mercury::initialize();
-
   tRobotItf* itf = (tRobotItf*) pt;
 
   itf->rbNewTrack = initTrack;  /* Give the robot the track view called */
@@ -179,7 +178,5 @@ static void shutdown(int index)
     delete drivers[index];
     drivers[index] = NULL;
   }
-
-  mercury::finalize();
 }
 

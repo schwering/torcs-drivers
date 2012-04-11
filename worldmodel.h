@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include <boost/asio.hpp>
+
 #include <tgfclient.h>
 
 #include "driver.h"
@@ -88,11 +90,14 @@ class cWorldModel : public cDriver::cHandler
     double virtualStart;
   };
 
+#if 0
   class cMercuryInterface : public cListener, cRedrawable
   {
    public:
     explicit cMercuryInterface();
     virtual ~cMercuryInterface();
+    double normalize_pos(const cDriver& context,
+                         double pos) const;
     virtual void process(const cDriver& context,
                          const std::vector<tCarInfo>& infos);
     virtual float interval() const;
@@ -104,6 +109,35 @@ class cWorldModel : public cDriver::cHandler
                       const float* color,
                       const char* msg);
 
+    bool activated;
+    double virtualStart;
+  };
+#endif
+
+  class cMercuryClient : public cListener, cRedrawable
+  {
+   public:
+    explicit cMercuryClient();
+    virtual ~cMercuryClient();
+    double normalize_pos(const cDriver& context,
+                         double pos) const;
+    virtual void process(const cDriver& context,
+                         const std::vector<tCarInfo>& infos);
+    virtual float interval() const;
+    virtual void redraw();
+
+   private:
+    static void print(int line,
+                      bool small,
+                      const float* color,
+                      const char* msg);
+
+    static const char* MERCURY_HOST;
+    static const char* MERCURY_PORT;
+
+    static boost::asio::io_service io_service;
+
+    boost::asio::ip::tcp::socket socket;
     bool activated;
     double virtualStart;
   };
