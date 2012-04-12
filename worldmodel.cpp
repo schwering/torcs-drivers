@@ -560,7 +560,8 @@ boost::asio::io_service cWorldModel::cMercuryClient::io_service;
 cWorldModel::cMercuryClient::cMercuryClient()
   : socket(io_service),
     activated(false),
-    virtualStart(-1.0)
+    virtualStart(-1.0),
+    confidence(0.0f)
 {
   cRedrawHookManager::instance().register_handler(this);
 
@@ -673,10 +674,10 @@ void cWorldModel::cMercuryClient::process(
 
 void cWorldModel::cMercuryClient::redraw()
 {
-  //char buf[64];
-  //sprintf(buf, "%.1lf%%\n", confidence * 100);
+  char buf[64];
+  sprintf(buf, "%.1f%%\n", confidence * 100);
   //print(0, false, colors::GREEN, "Mercury");
-  //print(1, false, (confidence > 0.02 ? colors::GREEN : colors::RED), buf);
+  print(1, false, (confidence > 0.02 ? colors::GREEN : colors::RED), buf);
 }
 
 void cWorldModel::cMercuryClient::print(int line,
