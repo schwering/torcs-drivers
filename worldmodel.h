@@ -140,6 +140,7 @@ class cWorldModel : public cDriver::cHandler
     boost::asio::ip::tcp::socket socket;
     bool activated;
     double virtualStart;
+    double confidence;
   };
 
   class cOffsetSerializor : public cListener

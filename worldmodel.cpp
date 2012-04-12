@@ -648,13 +648,13 @@ void cWorldModel::cMercuryClient::process(
     strncpy(r.agent0, (!strcmp(a0.name, "human")) ? "b" : "a", AGENTLEN);
     r.veloc0 = a0.veloc;
     r.rad0 = a0.yaw;
-    r.x0 = a0.pos;
+    r.x0 = normalize_pos(context, a0.pos);
     r.y0 = a0.offset;
 
     strncpy(r.agent1, (!strcmp(a1.name, "human")) ? "b" : "a", AGENTLEN);
     r.veloc1 = a1.veloc;
     r.rad1 = a1.yaw;
-    r.x1 = a1.pos;
+    r.x1 = normalize_pos(context, a1.pos);
     r.y1 = a1.offset;
 
     boost::asio::write(socket, boost::asio::buffer(&r, sizeof r));
@@ -662,12 +662,16 @@ void cWorldModel::cMercuryClient::process(
     float c;
     boost::asio::read(socket, boost::asio::buffer(&c, sizeof c));
     printf("Confidence: %lf\n", c);
+    confidence = c;
   }
 }
 
 void cWorldModel::cMercuryClient::redraw()
 {
-  print(0, false, colors::GREEN, "Mercury");
+  //char buf[64];
+  //sprintf(buf, "%.1lf%%\n", confidence * 100);
+  //print(0, false, colors::GREEN, "Mercury");
+  //print(1, false, (confidence > 0.02 ? colors::GREEN : colors::RED), buf);
 }
 
 void cWorldModel::cMercuryClient::print(int line,
