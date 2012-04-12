@@ -659,9 +659,14 @@ void cWorldModel::cMercuryClient::process(
 
     boost::asio::write(socket, boost::asio::buffer(&r, sizeof r));
 
+    printf("%lf %s %lf %lf %lf %lf %s %lf %lf %lf %lf\n",
+           r.t,
+           r.agent0, r.veloc0, r.rad0, r.x0, r.y0,
+           r.agent1, r.veloc1, r.rad1, r.x1, r.y1);
+
     float c;
-    boost::asio::read(socket, boost::asio::buffer(&c, sizeof c));
-    printf("Confidence: %lf\n", c);
+    boost::asio::read(socket, boost::asio::buffer(&c, sizeof(c)));
+    printf("Confidence: %f\n", c);
     confidence = c;
   }
 }
