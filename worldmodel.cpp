@@ -5,7 +5,7 @@
 #include <poll.h>
 #include <sys/select.h>
 
-#include <obs_types.h>
+#include <boost/bind.hpp>
 
 #if 0
 #include <planrecog.h>
@@ -555,25 +555,32 @@ float cWorldModel::cMercuryInterface::interval() const
 
 const char* cWorldModel::cMercuryClient::MERCURY_HOST = "localhost";
 const char* cWorldModel::cMercuryClient::MERCURY_PORT = "19123";
-boost::asio::io_service cWorldModel::cMercuryClient::io_service;
 
 cWorldModel::cMercuryClient::cMercuryClient()
-  : socket(io_service),
+  : work(io_service),
+    io_thread(boost::bind(&boost::asio::io_service::run, &io_service)),
+    socket(io_service),
     activated(false),
-    virtualStart(-1.0),
-    confidence(0.0f)
+    virtualStart(-1.0)
 {
   cRedrawHookManager::instance().register_handler(this);
 
+  pthread_spin_init(&spinlock, PTHREAD_PROCESS_PRIVATE);
   using boost::asio::ip::tcp;
   tcp::resolver resolver(io_service);
   tcp::resolver::query query(tcp::v4(), MERCURY_HOST, MERCURY_PORT);
   tcp::resolver::iterator iterator = resolver.resolve(query);
   boost::asio::connect(socket, iterator);
+  memset(&state_msg, 0, sizeof(&state_msg));
 }
 
 cWorldModel::cMercuryClient::~cMercuryClient()
 {
+  socket.close();
+  io_service.stop();
+  io_thread.join();
+  pthread_spin_destroy(&spinlock);
+
   cRedrawHookManager::instance().unregister_handler(this);
   ReMovieCaptureHack(0);
 }
@@ -643,51 +650,103 @@ void cWorldModel::cMercuryClient::process(
     const tCarInfo& a0 = infos[0];
     const tCarInfo& a1 = infos[1];
 
-    struct record r;
-    r.t = a0.time;
+    struct record* rec = new struct record;
+    rec->t = a0.time;
 
-    strncpy(r.agent0, (!strcmp(a0.name, "human")) ? "b" : "a", AGENTLEN);
-    r.veloc0 = a0.veloc;
-    r.rad0 = a0.yaw;
-    r.x0 = normalize_pos(context, a0.pos);
-    r.y0 = a0.offset;
+    strncpy(rec->agent0, (!strcmp(a0.name, "human")) ? "b" : "a", AGENTLEN);
+    rec->veloc0 = a0.veloc;
+    rec->rad0 = a0.yaw;
+    rec->x0 = normalize_pos(context, a0.pos);
+    rec->y0 = a0.offset;
 
-    strncpy(r.agent1, (!strcmp(a1.name, "human")) ? "b" : "a", AGENTLEN);
-    r.veloc1 = a1.veloc;
-    r.rad1 = a1.yaw;
-    r.x1 = normalize_pos(context, a1.pos);
-    r.y1 = a1.offset;
+    strncpy(rec->agent1, (!strcmp(a1.name, "human")) ? "b" : "a", AGENTLEN);
+    rec->veloc1 = a1.veloc;
+    rec->rad1 = a1.yaw;
+    rec->x1 = normalize_pos(context, a1.pos);
+    rec->y1 = a1.offset;
 
-    boost::asio::write(socket, boost::asio::buffer(&r, sizeof r));
+    //pthread_spin_lock(&owner->spinlock);
+    boost::asio::async_write(
+        socket, boost::asio::buffer(rec, sizeof(*rec)),
+        boost::bind(&cMercuryClient::write_handler, this, rec,
+                    boost::asio::placeholders::error,
+                    boost::asio::placeholders::bytes_transferred));
 
+    /*
     printf("%lf %s %lf %lf %lf %lf %s %lf %lf %lf %lf\n",
-           r.t,
-           r.agent0, r.veloc0, r.rad0, r.x0, r.y0,
-           r.agent1, r.veloc1, r.rad1, r.x1, r.y1);
-
-    float c;
-    boost::asio::read(socket, boost::asio::buffer(&c, sizeof(c)));
-    printf("Confidence: %f\n", c);
-    confidence = c;
+           rec->t,
+           rec->agent0, rec->veloc0, rec->rad0, rec->x0, rec->y0,
+           rec->agent1, rec->veloc1, rec->rad1, rec->x1, rec->y1);
+    */
   }
+}
+
+void cWorldModel::cMercuryClient::write_handler(
+    struct record* rec,
+    const boost::system::error_code& ec,
+    std::size_t bytes_transferred)
+{
+  delete rec;
+  struct state_message* msg = new struct state_message;
+  boost::asio::async_read(
+      socket, boost::asio::buffer(msg, sizeof(*msg)),
+      boost::bind(&cMercuryClient::read_handler, this, msg,
+                  boost::asio::placeholders::error,
+                  boost::asio::placeholders::bytes_transferred));
+}
+
+void cWorldModel::cMercuryClient::read_handler(
+    struct state_message* msg,
+    const boost::system::error_code& ec,
+    std::size_t bytes_transferred)
+{
+  memcpy(&state_msg, msg, sizeof(*msg));
+  const float min_conf = min_confidence();
+  const float max_conf = max_confidence();
+  printf("%f =< Confidence =< %f\n", min_conf, max_conf);
+  delete msg;
+  pthread_spin_unlock(&spinlock);
+}
+
+float cWorldModel::cMercuryClient::min_confidence() const
+{
+  const int n = state_msg.working + state_msg.finished + state_msg.failed;
+  return ((float) state_msg.finished) / ((float) n);
+}
+
+float cWorldModel::cMercuryClient::max_confidence() const
+{
+  const int n = state_msg.working + state_msg.finished + state_msg.failed;
+  return ((float) state_msg.working + state_msg.finished) / ((float) n);
 }
 
 void cWorldModel::cMercuryClient::redraw()
 {
-  char buf[64];
-  sprintf(buf, "%.1f%%\n", confidence * 100);
-  //print(0, false, colors::GREEN, "Mercury");
-  print(1, false, (confidence > 0.02 ? colors::GREEN : colors::RED), buf);
+  char min_buf[16];
+  char max_buf[16];
+  //pthread_spin_lock(&spinlock);
+  const float min_conf = min_confidence();
+  const float max_conf = max_confidence();
+  //pthread_spin_unlock(&spinlock);
+  sprintf(min_buf, "%.1f%%", min_conf * 100.0f);
+  sprintf(max_buf, "%.1f%%", max_conf * 100.0f);
+  const float* min_col = (min_conf > 0.02 ? colors::GREEN : colors::RED);
+  const float* max_col = (max_conf > 0.02 ? colors::GREEN : colors::RED);
+  const float* cen_col = (min_col == colors::GREEN ? colors::GREEN : max_col == colors::RED ? colors::RED : colors::YELLOW);
+  print(1, -1, false, min_col, min_buf);
+  print(1,  0, false, cen_col, "=< p =<");
+  print(1,  1, false, max_col, max_buf);
 }
 
-void cWorldModel::cMercuryClient::print(int line,
+void cWorldModel::cMercuryClient::print(int row,
+                                        int col,
                                         bool small,
                                         const float* color,
                                         const char* msg)
 {
   const int font = small ? fonts::F_MEDIUM: fonts::F_BIG;
-  const int x = 400;
-  const int y = 550 - line * 45;
+  const int x = 400 + col * 150;
+  const int y = 550 - row * 45;
   GfuiPrintString(msg, const_cast<float*>(color), font, x, y,
                   fonts::ALIGN_CENTER);
 }

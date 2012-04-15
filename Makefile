@@ -8,8 +8,8 @@
 
 include /home/chs/Documents/Prolog/mercury/Make.common
 
-COMPILFLAGS = -I$(LIB_DIR)/inc
-LIBS        = -lboost_system
+COMPILFLAGS := -I$(LIB_DIR)/inc
+LIBS        = -lboost_system -lboost_thread-mt
 #LIBS	    = -lpr
 
 ROBOT       = chs

@@ -46,7 +46,7 @@ static cWorldModel* make_world_model()
 {
   cWorldModel* wm = new cWorldModel();
   //wm->addListener(new cWorldModel::cSimplePrologSerializor("/home/chs/Desktop/torcs/obs"));
-  wm->addListener(new cWorldModel::cSimpleMercurySerializor("/home/chs/Documents/Prolog/mercury/planrecog/obs/obs"));
+  //wm->addListener(new cWorldModel::cSimpleMercurySerializor("/home/chs/Documents/Prolog/mercury/planrecog/obs/obs"));
   //wm->addListener(new cWorldModel::cMercuryInterface());
   wm->addListener(new cWorldModel::cMercuryClient());
   //wm->addListener(new cWorldModel::cOffsetSerializor("/home/chs/Desktop/torcs/offset"));

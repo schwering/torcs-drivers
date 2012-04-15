@@ -4,8 +4,12 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <pthread.h>
 
 #include <boost/asio.hpp>
+#include <boost/thread.hpp>
+
+#include <obs_types.h>
 
 #include <tgfclient.h>
 
@@ -127,7 +131,10 @@ class cWorldModel : public cDriver::cHandler
     virtual void redraw();
 
    private:
-    static void print(int line,
+    static void* observation_thread(void* arg);
+
+    static void print(int row,
+                      int col,
                       bool small,
                       const float* color,
                       const char* msg);
@@ -135,12 +142,25 @@ class cWorldModel : public cDriver::cHandler
     static const char* MERCURY_HOST;
     static const char* MERCURY_PORT;
 
-    static boost::asio::io_service io_service;
+    void write_handler(struct record* rec,
+                       const boost::system::error_code& ec,
+                       std::size_t bytes_transferred);
 
+    void read_handler(struct state_message* msg,
+                      const boost::system::error_code& ec,
+                      std::size_t bytes_transferred);
+
+    float min_confidence() const;
+    float max_confidence() const;
+
+    pthread_spinlock_t spinlock;
+    boost::asio::io_service io_service;
+    boost::asio::io_service::work work;
+    boost::thread io_thread;
     boost::asio::ip::tcp::socket socket;
     bool activated;
     double virtualStart;
-    float confidence;
+    struct state_message state_msg;
   };
 
   class cOffsetSerializor : public cListener
