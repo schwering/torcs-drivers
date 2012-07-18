@@ -6,7 +6,7 @@
 #
 ##############################################################################
 
-include /home/chs/Documents/Prolog/mercury/Make.common
+include /home/chs/Documents/Mercury/prGolog/Mercury/Make.common
 
 COMPILFLAGS := -I$(LIB_DIR)/inc
 LIBS        = -lboost_system -lboost_thread-mt

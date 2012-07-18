@@ -10,7 +10,6 @@
 #include <tgf.h>
 #include <track.h>
 #include <car.h>
-#include <planrecog.h>
 #include <raceman.h>
 #include <robottools.h>
 #include <robot.h>
