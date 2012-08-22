@@ -9,7 +9,7 @@
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 
-#include <obs_types.h>
+#include <car-obs-torcs-types.h>
 
 #include <tgfclient.h>
 
@@ -139,14 +139,14 @@ class cWorldModel : public cDriver::cHandler
                       const float* color,
                       const char* msg);
 
-    static const char* MERCURY_HOST;
-    static const char* MERCURY_PORT;
+    static const std::string MERCURY_HOST;
+    static const std::string MERCURY_PORT;
 
-    void write_handler(struct record* rec,
+    void write_handler(struct observation_record* obs_rec,
                        const boost::system::error_code& ec,
                        std::size_t bytes_transferred);
 
-    void read_handler(struct state_message* msg,
+    void read_handler(struct planrecog_state* msg,
                       const boost::system::error_code& ec,
                       std::size_t bytes_transferred);
 
@@ -160,7 +160,7 @@ class cWorldModel : public cDriver::cHandler
     boost::asio::ip::tcp::socket socket;
     bool activated;
     double virtualStart;
-    struct state_message state_msg;
+    struct planrecog_state planrecog_state;
   };
 
   class cOffsetSerializor : public cListener

@@ -552,9 +552,19 @@ float cWorldModel::cMercuryInterface::interval() const
 }
 #endif
 
+template<class T>
+std::string t_to_string(T i)
+{
+  std::stringstream ss;
+  std::string s;
+  ss << i;
+  s = ss.str();
+  return s;
+}
 
-const char* cWorldModel::cMercuryClient::MERCURY_HOST = "localhost";
-const char* cWorldModel::cMercuryClient::MERCURY_PORT = "19123";
+
+const std::string cWorldModel::cMercuryClient::MERCURY_HOST = "localhost";
+const std::string cWorldModel::cMercuryClient::MERCURY_PORT = t_to_string(PORT);
 
 cWorldModel::cMercuryClient::cMercuryClient()
   : work(io_service),
@@ -571,7 +581,7 @@ cWorldModel::cMercuryClient::cMercuryClient()
   tcp::resolver::query query(tcp::v4(), MERCURY_HOST, MERCURY_PORT);
   tcp::resolver::iterator iterator = resolver.resolve(query);
   boost::asio::connect(socket, iterator);
-  memset(&state_msg, 0, sizeof(&state_msg));
+  memset(&planrecog_state, 0, sizeof(&planrecog_state));
 }
 
 cWorldModel::cMercuryClient::~cMercuryClient()
@@ -650,44 +660,44 @@ void cWorldModel::cMercuryClient::process(
     const tCarInfo& a0 = infos[0];
     const tCarInfo& a1 = infos[1];
 
-    struct record* rec = new struct record;
-    rec->t = a0.time;
+    struct observation_record* obs_rec = new struct observation_record;
+    obs_rec->t = a0.time;
 
-    strncpy(rec->agent0, (!strcmp(a0.name, "human")) ? "b" : "a", AGENTLEN);
-    rec->veloc0 = a0.veloc;
-    rec->rad0 = a0.yaw;
-    rec->x0 = normalize_pos(context, a0.pos);
-    rec->y0 = a0.offset;
+    strncpy(obs_rec->agent0, (!strcmp(a0.name, "human")) ? "b" : "a", AGENTLEN);
+    obs_rec->veloc0 = a0.veloc;
+    obs_rec->rad0 = a0.yaw;
+    obs_rec->x0 = normalize_pos(context, a0.pos);
+    obs_rec->y0 = a0.offset;
 
-    strncpy(rec->agent1, (!strcmp(a1.name, "human")) ? "b" : "a", AGENTLEN);
-    rec->veloc1 = a1.veloc;
-    rec->rad1 = a1.yaw;
-    rec->x1 = normalize_pos(context, a1.pos);
-    rec->y1 = a1.offset;
+    strncpy(obs_rec->agent1, (!strcmp(a1.name, "human")) ? "b" : "a", AGENTLEN);
+    obs_rec->veloc1 = a1.veloc;
+    obs_rec->rad1 = a1.yaw;
+    obs_rec->x1 = normalize_pos(context, a1.pos);
+    obs_rec->y1 = a1.offset;
 
     //pthread_spin_lock(&owner->spinlock);
     boost::asio::async_write(
-        socket, boost::asio::buffer(rec, sizeof(*rec)),
-        boost::bind(&cMercuryClient::write_handler, this, rec,
+        socket, boost::asio::buffer(obs_rec, sizeof(*obs_rec)),
+        boost::bind(&cMercuryClient::write_handler, this, obs_rec,
                     boost::asio::placeholders::error,
                     boost::asio::placeholders::bytes_transferred));
 
     /*
     printf("%lf %s %lf %lf %lf %lf %s %lf %lf %lf %lf\n",
-           rec->t,
-           rec->agent0, rec->veloc0, rec->rad0, rec->x0, rec->y0,
-           rec->agent1, rec->veloc1, rec->rad1, rec->x1, rec->y1);
+           obs_rec->t,
+           obs_rec->agent0, obs_rec->veloc0, obs_rec->rad0, obs_rec->x0, obs_rec->y0,
+           obs_rec->agent1, obs_rec->veloc1, obs_rec->rad1, obs_rec->x1, obs_rec->y1);
     */
   }
 }
 
 void cWorldModel::cMercuryClient::write_handler(
-    struct record* rec,
+    struct observation_record* obs_rec,
     const boost::system::error_code& ec,
     std::size_t bytes_transferred)
 {
-  delete rec;
-  struct state_message* msg = new struct state_message;
+  delete obs_rec;
+  struct planrecog_state* msg = new struct planrecog_state;
   boost::asio::async_read(
       socket, boost::asio::buffer(msg, sizeof(*msg)),
       boost::bind(&cMercuryClient::read_handler, this, msg,
@@ -696,11 +706,11 @@ void cWorldModel::cMercuryClient::write_handler(
 }
 
 void cWorldModel::cMercuryClient::read_handler(
-    struct state_message* msg,
+    struct planrecog_state* msg,
     const boost::system::error_code& ec,
     std::size_t bytes_transferred)
 {
-  memcpy(&state_msg, msg, sizeof(*msg));
+  memcpy(&planrecog_state, msg, sizeof(*msg));
   const float min_conf = min_confidence();
   const float max_conf = max_confidence();
   printf("%f =< Confidence =< %f\n", min_conf, max_conf);
@@ -710,14 +720,14 @@ void cWorldModel::cMercuryClient::read_handler(
 
 float cWorldModel::cMercuryClient::min_confidence() const
 {
-  const int n = state_msg.working + state_msg.finished + state_msg.failed;
-  return ((float) state_msg.finished) / ((float) n);
+  const int n = planrecog_state.working + planrecog_state.finished + planrecog_state.failed;
+  return ((float) planrecog_state.finished) / ((float) n);
 }
 
 float cWorldModel::cMercuryClient::max_confidence() const
 {
-  const int n = state_msg.working + state_msg.finished + state_msg.failed;
-  return ((float) state_msg.working + state_msg.finished) / ((float) n);
+  const int n = planrecog_state.working + planrecog_state.finished + planrecog_state.failed;
+  return ((float) planrecog_state.working + planrecog_state.finished) / ((float) n);
 }
 
 void cWorldModel::cMercuryClient::redraw()

@@ -6,9 +6,9 @@
 #
 ##############################################################################
 
-include /home/chs/Documents/Mercury/prGolog/Mercury/Make.common
+PRGOLOG_INSTALL_DIR := /home/chs/Documents/Mercury/prGolog
 
-COMPILFLAGS := -I$(LIB_DIR)/inc
+COMPILFLAGS := -I$(PRGOLOG_INSTALL_DIR)/lib/mercury/inc
 LIBS        = -lboost_system -lboost_thread-mt
 #LIBS	    = -lpr
 
