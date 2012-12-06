@@ -19,15 +19,15 @@
 #include "autothrottle.h"
 #include "delay.h"
 #include "minithrottle.h"
+#include "observer.h"
 #include "simpledriver.h"
 #include "transmission.h"
-#include "worldmodel.h"
 
 #include "../scenario.h"
 
-#define MAX_BOTS 10
+#define MAX_BOTS 4
 
-cDriver* drivers[MAX_BOTS] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+cDriver* drivers[MAX_BOTS] = { NULL, NULL, NULL, NULL/*, NULL, NULL, NULL, NULL, NULL, NULL*/ };
 
 static cDriver& get_driver(int index);
 static void initTrack(int         index,
@@ -41,19 +41,6 @@ static void endRace(int index, tCarElt* car, tSituation* s);
 static void shutdown(int index);
 static int initFuncPt(int index, void* pt);
 
-static cWorldModel* make_world_model()
-{
-  cWorldModel* wm = new cWorldModel();
-  //wm->addListener(new cWorldModel::cSimplePrologSerializor("/home/chs/Desktop/torcs/obs"));
-  //wm->addListener(new cWorldModel::cSimpleMercurySerializor("/home/chs/Documents/Prolog/mercury/planrecog/obs/obs"));
-  //wm->addListener(new cWorldModel::cMercuryInterface());
-  wm->addListener(new cWorldModel::cMercuryClient());
-  //wm->addListener(new cWorldModel::cOffsetSerializor("/home/chs/Desktop/torcs/offset"));
-  wm->addListener(new cWorldModel::cGraphicInfoDisplay());
-  wm->addListener(new cWorldModel::cGraphicPlanRecogDisplay());
-  return wm;
-}
-
 /* Configure the index-th driver and return it. */
 static cDriver& get_driver(int index)
 {
@@ -61,35 +48,36 @@ static cDriver& get_driver(int index)
     printf("access to %d/%d bot not allowed (1)\n", index, MAX_BOTS);
     exit(1);
   }
+  /* The configurations should be synced with the description array in chs(). */
   if (!drivers[index]) {
     drivers[index] = new cDriver();
     drivers[index]->addHandler(new cTransmission());
     switch (index) {
       case 0: {
-        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_LEFT));
-        drivers[index]->addHandler(new cMiniThrottle(59.0f));
+        cObserver* observer = new cObserver();
+        //observer->addListener(new cObserver::cMercuryClient());
+        observer->addListener(new cObserver::cGraphicInfoDisplay());
+        observer->addListener(new cObserver::cGraphicPlanRecogDisplay());
+        drivers[index]->addHandler(observer);
+        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_MIDDLE));
+        drivers[index]->addHandler(new cMiniThrottle(10.0f));
+        drivers[index]->addHandler(new cDelay(5.0));
         break;
       }
       case 1: {
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_RIGHT));
-#ifdef DA_ACCEL_LIMIT
-        drivers[index]->addHandler(new cMiniThrottle(50.0f));
-#endif
-#ifdef DA_SPEED_LIMIT
-        drivers[index]->addHandler(new cMiniThrottle(60.0f));
-#endif
-        drivers[index]->addHandler(make_world_model());
+        drivers[index]->addHandler(new cMiniThrottle(59.0f));
         break;
       }
       case 2: {
-        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_LEFT));
-        drivers[index]->addHandler(new cMiniThrottle(60.0f));
-        drivers[index]->addHandler(new cDelay(5));
-        //drivers[index]->addHandler(make_world_model());
+        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_RIGHT));
+        drivers[index]->addHandler(new cMiniThrottle(50.0f));
         break;
       }
       case 3: {
-        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_RIGHT));
+        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_LEFT));
+        drivers[index]->addHandler(new cMiniThrottle(60.0f));
+        drivers[index]->addHandler(new cDelay(5));
         break;
       }
     }
@@ -102,10 +90,23 @@ static cDriver& get_driver(int index)
 extern "C"
 int chs(tModInfo* modInfo)
 {
+  /* The description array should be synced with the bot configurations in
+   * get_driver(). These descriptions are used to build the name which is
+   * displayed to the user when he configures the race. */
+  const char *description[MAX_BOTS];
+  for (int i = 0; i < MAX_BOTS; ++i) {
+    description[i] = "";
+  }
+  description[0] = "Observer (right, 10km/h, 15s delay)";
+  description[1] = "Passable (right, 59km/h)";
+  description[2] = "Passable (right, 50km/h)";
+  description[3] = "Passing (left lane, 60km/h, 5s delay)";
+
   memset(modInfo, 0, MAX_BOTS*sizeof(tModInfo));
   for (int i = 0; i < MAX_BOTS; ++i) {
-    char name[32];
-    sprintf(name, "chs-%d", i);
+    const char id = 'a' + i;
+    char name[512];
+    sprintf(name, "%c (%s)", id, description[i]);
     modInfo[i].name    = strdup(name);
     modInfo[i].desc    = strdup(name);
     modInfo[i].fctInit = initFuncPt;

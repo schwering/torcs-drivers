@@ -15,7 +15,7 @@ LIBS        = -lboost_system -lboost_thread-mt
 ROBOT       = chs
 MODULE      = ${ROBOT}.so
 MODULEDIR   = drivers/${ROBOT}
-SOURCES     = ${ROBOT}.cpp driver.cpp trackprofile.cpp simpledriver.cpp transmission.cpp autothrottle.cpp minithrottle.cpp abs.cpp worldmodel.cpp image.cpp pnmimage.cpp delay.cpp
+SOURCES     = ${ROBOT}.cpp driver.cpp trackprofile.cpp simpledriver.cpp transmission.cpp autothrottle.cpp minithrottle.cpp abs.cpp observer.cpp image.cpp pnmimage.cpp delay.cpp
 
 SHIPDIR     = drivers/${ROBOT}
 SHIP        = ${ROBOT}.xml logo.rgb

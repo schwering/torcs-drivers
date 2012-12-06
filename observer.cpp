@@ -1,4 +1,4 @@
-#include "worldmodel.h"
+#include "observer.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -7,9 +7,6 @@
 
 #include <boost/bind.hpp>
 
-#if 0
-#include <planrecog.h>
-#endif
 #include <raceinit.h>
 #include <raceengine.h>
 #include <tgfclient.h>
@@ -45,32 +42,35 @@ const int ALIGN_RIGHT = GFUI_ALIGN_HR_VC;
 const int ALIGN_LEFT = GFUI_ALIGN_HL_VC;
 }
 
-int cWorldModel::priority() const {
+int cObserver::priority() const {
   return 10000;
 }
 
-void cWorldModel::handle(cDriver& context)
+void cObserver::handle(cDriver& context)
 {
   const double now = context.sit->currentTime;
   const int ncars = context.sit->_ncars;
   if (ncars == 0) {
     return;
   }
-  std::vector<tCarInfo> infos(ncars);
-
-  for (int i = 0; i < ncars; ++i) {
-    infos[i] = build_car_info(now, context.sit->cars[i]);
+  std::vector<tCarInfo> infos(ncars - 1);
+  for (int i = 0, j = 0; i < ncars; ++i) {
+    if (context.sit->cars[i] != context.car) {
+      assert(j < ncars - 1);
+      infos[j++] = build_car_info(now, context.sit->cars[i]);
+    }
   }
-
   for (size_t i = 0; i < listeners.size(); ++i) {
     listeners[i]->process_or_skip(context, infos);
   }
 }
 
-cWorldModel::tCarInfo cWorldModel::build_car_info(double now, tCarElt* car)
+cObserver::tCarInfo cObserver::build_car_info(double now, tCarElt* car)
 {
   tCarInfo ci;
   ci.name = car->_name;
+  ci.is_robot = (car->_driverType == RM_DRV_ROBOT);
+  assert(car->_driverType == RM_DRV_ROBOT || car->_driverType == RM_DRV_HUMAN);
   ci.time = now;
   ci.veloc = car->_speed_x;
   ci.accel = car->_accel_x;
@@ -88,12 +88,12 @@ cWorldModel::tCarInfo cWorldModel::build_car_info(double now, tCarElt* car)
   return ci;
 }
 
-void cWorldModel::addListener(cWorldModel::cListener* listener)
+void cObserver::addListener(cObserver::cListener* listener)
 {
   listeners.push_back(listener);
 }
 
-void cWorldModel::cListener::process_or_skip(
+void cObserver::cListener::process_or_skip(
     const cDriver& context,
     const std::vector<tCarInfo>& infos)
 {
@@ -105,7 +105,7 @@ void cWorldModel::cListener::process_or_skip(
   }
 }
 
-void cWorldModel::cListener::process(
+void cObserver::cListener::process(
     const cDriver& context,
     const std::vector<tCarInfo>& infos)
 {
@@ -116,7 +116,7 @@ void cWorldModel::cListener::process(
   }
 }
 
-void cWorldModel::cListener::process(
+void cObserver::cListener::process(
     const cDriver& context,
     const tCarInfo& info)
 {
@@ -124,7 +124,7 @@ void cWorldModel::cListener::process(
 }
 
 
-class cWorldModel::cRedrawHookManager
+class cObserver::cRedrawHookManager
 {
  public:
   static cRedrawHookManager& instance() {
@@ -182,175 +182,20 @@ class cWorldModel::cRedrawHookManager
 };
 
 
-cWorldModel::cSimplePrologSerializor::cSimplePrologSerializor(const char *name)
-  : fp(fopen_next(name, "ecl")),
-    activated(false),
-    virtualStart(-1.0)
-{
-}
-
-cWorldModel::cSimplePrologSerializor::~cSimplePrologSerializor()
-{
-  ReMovieCaptureHack(0);
-  FILE *fps[] = { stdout, fp };
-  for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
-    if (fps[i]) {
-      fprintf(fps[i], "\n%% EndOfRecord\n\n");
-      fflush(fps[i]);
-    }
-  }
-  fclose(fp);
-  //GfctrlMouseRelease(mouseInfo);
-}
-
-void cWorldModel::cSimplePrologSerializor::process(
-    const cDriver& context,
-    const std::vector<tCarInfo>& infos)
-{
-  /*
-  if (!activated) {
-    GfctrlMouseGetCurrent(mouseInfo);
-    if (mouseInfo->button[0] == 1 ||
-        mouseInfo->edgedn[0] == 1 ||
-        mouseInfo->edgeup[0] == 1) {
-      ReMovieCapture();
-      activated = true;
-    }
-  }
-
-  if (!activated) {
-    fd_set rfds;
-    FD_ZERO(&rfds);
-    FD_SET(0, &rfds);
-
-    struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = 0;
-
-    int retval = select(1, &rfds, NULL, NULL, &tv);
-    if (retval == -1) {
-      perror("select()");
-    } else if (retval) {
-      activated = fgetc(stdin) != EOF;
-    }
-  }
-  */
-
-  const bool prev_activated = activated;
-
-  if (!prev_activated) {
-    for (std::vector<tCarInfo>::const_iterator it = infos.begin();
-         it != infos.end(); ++it) {
-      activated = activated || mps2kmph(it->veloc) > 73;
-#ifdef DA_ACCEL_LIMIT
-      activated = activated || (!strcmp(it->name, "human") && mps2kmph(it->veloc) > 10);
-#endif
-    }
-  }
-
-  if (!prev_activated && activated) {
-    fprintf(stderr, "Starting to observe.\n");
-    ReMovieCaptureHack(0);
-    FILE *fps[] = { stdout, fp };
-    for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
-      if (fps[i]) {
-        fprintf(fps[i], ":- module(obs).\n");
-        fprintf(fps[i], ":- export(obs/2).\n");
-        fprintf(fps[i], "\n");
-        fprintf(fps[i], "%% BeginOfRecord\n\n");
-        fflush(fps[i]);
-      }
-    }
-  }
-
-  if (activated) {
-    /* Cars start before the starting line and therefore with a high position,
-     * that is, the sequence of positions could be 2900, 3000, 3100, 100, 200.
-     * These discontiguous don't fit our simple driving model in basic action
-     * theory. Therefore, we choose a virtual starting line at the minimal first
-     * measured position minus. */
-
-    if (virtualStart < 0.0) {
-      bool init = false;
-      double minPos = 0.0;
-      int minLaps = 0;
-      for (std::vector<tCarInfo>::const_iterator it = infos.begin();
-           it != infos.end(); ++it) {
-        if (!init ||
-            it->laps < minLaps ||
-            (it->laps == minLaps && it->pos < minPos)) {
-          init = true;
-          minPos = it->pos;
-          minLaps = it->laps;
-        }
-      }
-      virtualStart = minPos;
-      assert(init);
-      assert(virtualStart >= 0.0);
-    }
-
-    FILE *fps[] = { stdout, fp };
-    for (size_t i = 0; i < sizeof(fps) / sizeof(*fps); ++i) {
-      FILE *fp = fps[i];
-      if (!fp) {
-        continue;
-      }
-      for (std::vector<tCarInfo>::const_iterator it = infos.begin();
-           it != infos.end(); ++it) {
-        char nameTerm[32];
-        sprintf(nameTerm, "'%s'", it->name);
-
-        double pos = it->pos;
-        if (pos >= virtualStart) {
-          pos -= virtualStart;
-        } else {
-          pos += context.track->length - virtualStart;
-        }
-
-        if (it == infos.begin()) {
-          fprintf(fp, "obs(%10.5lf, [", it->time);
-        } else {
-          fprintf(fp, ",");
-          fprintf(fp, "                 ");
-        }
-        fprintf(fp,
-                " pos(%10s) = %10.4f,"\
-                " offset(%10s) = %7.3f,"\
-                " veloc(%10s) = %10.6f,"\
-                " rad(%10s) = %10.7f," \
-                " deg(%10s) = %10.6f",
-                nameTerm, pos,
-                nameTerm, it->offset,
-                nameTerm, it->veloc,
-                nameTerm, it->yaw,
-                nameTerm, rad2deg(it->yaw));
-      }
-      fprintf(fp, "]).\n");
-      fflush(fp);
-    }
-  }
-}
-
-float cWorldModel::cSimplePrologSerializor::interval() const
-{
-  return 0.5f;
-}
-
-
-cWorldModel::cSimpleMercurySerializor::cSimpleMercurySerializor(const char *name)
+cObserver::cSimpleMercurySerializor::cSimpleMercurySerializor(const char *name)
   : fp(fopen_next(name, "log")),
     activated(false),
     virtualStart(-1.0)
 {
 }
 
-cWorldModel::cSimpleMercurySerializor::~cSimpleMercurySerializor()
+cObserver::cSimpleMercurySerializor::~cSimpleMercurySerializor()
 {
   ReMovieCaptureHack(0);
   fclose(fp);
 }
 
-void cWorldModel::cSimpleMercurySerializor::process(
+void cObserver::cSimpleMercurySerializor::process(
     const cDriver& context,
     const std::vector<tCarInfo>& infos)
 {
@@ -361,7 +206,7 @@ void cWorldModel::cSimpleMercurySerializor::process(
          it != infos.end(); ++it) {
       activated = activated || mps2kmph(it->veloc) > 73;
 #ifdef DA_ACCEL_LIMIT
-      activated = activated || (!strcmp(it->name, "human") && mps2kmph(it->veloc) > 10);
+      activated = activated || (!it->is_robot && mps2kmph(it->veloc) > 10);
 #endif
     }
   }
@@ -428,129 +273,11 @@ void cWorldModel::cSimpleMercurySerializor::process(
   }
 }
 
-float cWorldModel::cSimpleMercurySerializor::interval() const
+float cObserver::cSimpleMercurySerializor::interval() const
 {
   return 0.5f;
 }
 
-
-#if 0
-cWorldModel::cMercuryInterface::cMercuryInterface()
-  : activated(false),
-    virtualStart(-1.0)
-{
-  cRedrawHookManager::instance().register_handler(this);
-  printf("%s:%d\n", __FILE__, __LINE__);
-  mercury::initialize();
-  printf("%s:%d\n", __FILE__, __LINE__);
-  mercury::start_plan_recognition();
-  printf("%s:%d\n", __FILE__, __LINE__);
-}
-
-cWorldModel::cMercuryInterface::~cMercuryInterface()
-{
-  cRedrawHookManager::instance().unregister_handler(this);
-  ReMovieCaptureHack(0);
-  mercury::finalize();
-}
-
-double cWorldModel::cMercuryInterface::normalize_pos(const cDriver& context,
-                                                     double pos) const
-{
-  if (pos >= virtualStart) {
-    pos -= virtualStart;
-  } else {
-    pos += context.track->length - virtualStart;
-  }
-  return pos;
-}
-
-void cWorldModel::cMercuryInterface::process(
-    const cDriver& context,
-    const std::vector<tCarInfo>& infos)
-{
-  if (infos.size() != 2) {
-    return;
-  }
-
-  const bool prev_activated = activated;
-
-  if (!prev_activated) {
-    for (std::vector<tCarInfo>::const_iterator it = infos.begin();
-         it != infos.end(); ++it) {
-      activated = activated || mps2kmph(it->veloc) > 73;
-#ifdef DA_ACCEL_LIMIT
-      activated = activated || (!strcmp(it->name, "human") && mps2kmph(it->veloc) > 10);
-#endif
-    }
-  }
-
-  if (!prev_activated && activated) {
-    fprintf(stderr, "Starting to observe.\n");
-    ReMovieCaptureHack(0);
-  }
-
-  if (activated) {
-    /* Cars start before the starting line and therefore with a high position,
-     * that is, the sequence of positions could be 2900, 3000, 3100, 100, 200.
-     * These discontiguous don't fit our simple driving model in basic action
-     * theory. Therefore, we choose a virtual starting line at the minimal first
-     * measured position minus. */
-
-    if (virtualStart < 0.0) {
-      bool init = false;
-      double minPos = 0.0;
-      int minLaps = 0;
-      for (std::vector<tCarInfo>::const_iterator it = infos.begin();
-           it != infos.end(); ++it) {
-        if (!init ||
-            it->laps < minLaps ||
-            (it->laps == minLaps && it->pos < minPos)) {
-          init = true;
-          minPos = it->pos;
-          minLaps = it->laps;
-        }
-      }
-      virtualStart = minPos;
-      assert(init);
-      assert(virtualStart >= 0.0);
-    }
-
-    const tCarInfo& a0 = infos[0];
-    const tCarInfo& a1 = infos[1];
-    const char* a0_name = (!strcmp(a0.name, "human")) ? "b" : "a";
-    const char* a1_name = (!strcmp(a1.name, "human")) ? "b" : "a";
-    mercury::push_obs(a0.time,
-                      a0_name, a0.veloc, a0.yaw,
-                      normalize_pos(context, a0.pos), a0.offset,
-                      a1_name, a1.veloc, a1.yaw,
-                      normalize_pos(context, a1.pos), a1.offset);
-  }
-  printf("Confidence: %lf\n", mercury::confidence());
-}
-
-void cWorldModel::cMercuryInterface::redraw()
-{
-  print(0, false, colors::GREEN, "Mercury");
-}
-
-void cWorldModel::cMercuryInterface::print(int line,
-                                           bool small,
-                                           const float* color,
-                                           const char* msg)
-{
-  const int font = small ? fonts::F_MEDIUM: fonts::F_BIG;
-  const int x = 400;
-  const int y = 550 - line * 45;
-  GfuiPrintString(msg, const_cast<float*>(color), font, x, y,
-                  fonts::ALIGN_CENTER);
-}
-
-float cWorldModel::cMercuryInterface::interval() const
-{
-  return 0.5f;
-}
-#endif
 
 template<class T>
 std::string t_to_string(T i)
@@ -563,10 +290,10 @@ std::string t_to_string(T i)
 }
 
 
-const std::string cWorldModel::cMercuryClient::MERCURY_HOST = "localhost";
-const std::string cWorldModel::cMercuryClient::MERCURY_PORT = t_to_string(PORT);
+const std::string cObserver::cMercuryClient::MERCURY_HOST = "localhost";
+const std::string cObserver::cMercuryClient::MERCURY_PORT = t_to_string(PORT);
 
-cWorldModel::cMercuryClient::cMercuryClient()
+cObserver::cMercuryClient::cMercuryClient()
   : work(io_service),
     io_thread(boost::bind(&boost::asio::io_service::run, &io_service)),
     socket(io_service),
@@ -584,7 +311,7 @@ cWorldModel::cMercuryClient::cMercuryClient()
   memset(&planrecog_state, 0, sizeof(&planrecog_state));
 }
 
-cWorldModel::cMercuryClient::~cMercuryClient()
+cObserver::cMercuryClient::~cMercuryClient()
 {
   socket.close();
   io_service.stop();
@@ -595,8 +322,8 @@ cWorldModel::cMercuryClient::~cMercuryClient()
   ReMovieCaptureHack(0);
 }
 
-double cWorldModel::cMercuryClient::normalize_pos(const cDriver& context,
-                                                  double pos) const
+double cObserver::cMercuryClient::normalize_pos(const cDriver& context,
+                                                double pos) const
 {
   if (pos >= virtualStart) {
     pos -= virtualStart;
@@ -606,7 +333,7 @@ double cWorldModel::cMercuryClient::normalize_pos(const cDriver& context,
   return pos;
 }
 
-void cWorldModel::cMercuryClient::process(
+void cObserver::cMercuryClient::process(
     const cDriver& context,
     const std::vector<tCarInfo>& infos)
 {
@@ -621,7 +348,7 @@ void cWorldModel::cMercuryClient::process(
          it != infos.end(); ++it) {
       activated = activated || mps2kmph(it->veloc) > 73;
 #ifdef DA_ACCEL_LIMIT
-      activated = activated || (!strcmp(it->name, "human") && mps2kmph(it->veloc) > 10);
+      activated = activated || (!it->is_robot && mps2kmph(it->veloc) > 10);
 #endif
     }
   }
@@ -657,23 +384,21 @@ void cWorldModel::cMercuryClient::process(
       assert(virtualStart >= 0.0);
     }
 
-    const tCarInfo& a0 = infos[0];
-    const tCarInfo& a1 = infos[1];
-
     struct observation_record* obs_rec = new struct observation_record;
-    obs_rec->t = a0.time;
+    obs_rec->t = infos[0].time;
+    obs_rec->n_agents = infos.size();
 
-    strncpy(obs_rec->agent0, (!strcmp(a0.name, "human")) ? "b" : "a", AGENTLEN);
-    obs_rec->veloc0 = a0.veloc;
-    obs_rec->rad0 = a0.yaw;
-    obs_rec->x0 = normalize_pos(context, a0.pos);
-    obs_rec->y0 = a0.offset;
-
-    strncpy(obs_rec->agent1, (!strcmp(a1.name, "human")) ? "b" : "a", AGENTLEN);
-    obs_rec->veloc1 = a1.veloc;
-    obs_rec->rad1 = a1.yaw;
-    obs_rec->x1 = normalize_pos(context, a1.pos);
-    obs_rec->y1 = a1.offset;
+    assert(infos.size() > 1);
+    assert(infos.size() <= NAGENTS);
+    for (std::vector<tCarInfo>::const_iterator it = infos.begin();
+         it != infos.end(); ++it) {
+      const int i = it - infos.begin();
+      strncpy(obs_rec->info[i].agent, it->name, AGENTLEN);
+      obs_rec->info[i].veloc = it->veloc;
+      obs_rec->info[i].rad = it->yaw;
+      obs_rec->info[i].x = normalize_pos(context, it->pos);
+      obs_rec->info[i].y = it->offset;
+    }
 
     //pthread_spin_lock(&owner->spinlock);
     boost::asio::async_write(
@@ -691,7 +416,7 @@ void cWorldModel::cMercuryClient::process(
   }
 }
 
-void cWorldModel::cMercuryClient::write_handler(
+void cObserver::cMercuryClient::write_handler(
     struct observation_record* obs_rec,
     const boost::system::error_code& ec,
     std::size_t bytes_transferred)
@@ -705,7 +430,7 @@ void cWorldModel::cMercuryClient::write_handler(
                   boost::asio::placeholders::bytes_transferred));
 }
 
-void cWorldModel::cMercuryClient::read_handler(
+void cObserver::cMercuryClient::read_handler(
     struct planrecog_state* msg,
     const boost::system::error_code& ec,
     std::size_t bytes_transferred)
@@ -718,19 +443,19 @@ void cWorldModel::cMercuryClient::read_handler(
   pthread_spin_unlock(&spinlock);
 }
 
-float cWorldModel::cMercuryClient::min_confidence() const
+float cObserver::cMercuryClient::min_confidence() const
 {
   const int n = planrecog_state.working + planrecog_state.finished + planrecog_state.failed;
   return ((float) planrecog_state.finished) / ((float) n);
 }
 
-float cWorldModel::cMercuryClient::max_confidence() const
+float cObserver::cMercuryClient::max_confidence() const
 {
   const int n = planrecog_state.working + planrecog_state.finished + planrecog_state.failed;
   return ((float) planrecog_state.working + planrecog_state.finished) / ((float) n);
 }
 
-void cWorldModel::cMercuryClient::redraw()
+void cObserver::cMercuryClient::redraw()
 {
   char min_buf[16];
   char max_buf[16];
@@ -748,11 +473,11 @@ void cWorldModel::cMercuryClient::redraw()
   print(1,  1, false, max_col, max_buf);
 }
 
-void cWorldModel::cMercuryClient::print(int row,
-                                        int col,
-                                        bool small,
-                                        const float* color,
-                                        const char* msg)
+void cObserver::cMercuryClient::print(int row,
+                                      int col,
+                                      bool small,
+                                      const float* color,
+                                      const char* msg)
 {
   const int font = small ? fonts::F_MEDIUM: fonts::F_BIG;
   const int x = 400 + col * 150;
@@ -761,56 +486,16 @@ void cWorldModel::cMercuryClient::print(int row,
                   fonts::ALIGN_CENTER);
 }
 
-float cWorldModel::cMercuryClient::interval() const
+float cObserver::cMercuryClient::interval() const
 {
   return 0.5f;
 }
 
 
-cWorldModel::cOffsetSerializor::cOffsetSerializor(const char *name)
-  : img(name, WIDTH, HEIGHT),
-    row(0)
-{
-  const int middle_of_the_street = WIDTH / 2;
-  const int mark_diff = 15;
-  const int mark_width = 4;
-  bool line_mark = false;
-  for (int row = 0; row < HEIGHT; ++row) {
-    if (line_mark) {
-      for (int i = -1 * mark_width / 2; i <= mark_diff / 2; ++i) {
-        img.set_pixel(middle_of_the_street + i, row, tColor::GRAY);
-      }
-    }
-    if (row % mark_diff == 0) {
-      line_mark = !line_mark;
-    }
-  }
-}
-
-void cWorldModel::cOffsetSerializor::process(
-    const cDriver& context, const cWorldModel::tCarInfo& ci)
-{
-  if (!strcmp("Player", ci.name) || !strcmp("human", ci.name)) {
-    if (mps2kmph(ci.veloc) > 50 && row < HEIGHT) {
-      const float offset = MIN(MAX_OFFSET, MAX(-1.0 * MAX_OFFSET, ci.offset));
-      const int scaled_offset = static_cast<int>(offset * WIDTH / 2 / 10);
-      const int pixel = WIDTH / 2 + scaled_offset;
-      img.set_pixel(pixel, row, tColor::BLACK);
-      ++row;
-    }
-  }
-}
-
-float cWorldModel::cOffsetSerializor::interval() const
-{
-  return 0.0f;
-}
+cObserver::cRedrawHookManager cObserver::cRedrawHookManager::instance_;
 
 
-cWorldModel::cRedrawHookManager cWorldModel::cRedrawHookManager::instance_;
-
-
-cWorldModel::cGraphicInfoDisplay::cGraphicInfoDisplay()
+cObserver::cGraphicInfoDisplay::cGraphicInfoDisplay()
   : init_phase(true),
     go_enabled(false),
     go_time(0.0l),
@@ -819,38 +504,37 @@ cWorldModel::cGraphicInfoDisplay::cGraphicInfoDisplay()
   cRedrawHookManager::instance().register_handler(this);
 }
 
-cWorldModel::cGraphicInfoDisplay::~cGraphicInfoDisplay()
+cObserver::cGraphicInfoDisplay::~cGraphicInfoDisplay()
 {
   cRedrawHookManager::instance().unregister_handler(this);
 }
 
-void cWorldModel::cGraphicInfoDisplay::process(
+void cObserver::cGraphicInfoDisplay::process(
     const cDriver& context,
     const std::vector<tCarInfo>& infos)
 {
-  bool have_human = false;
-  bool have_dummy = false;
+  bool found_human = false;
+  bool found_dummy = false;
   tCarInfo human = tCarInfo();
   tCarInfo dummy = tCarInfo();
   for (std::vector<tCarInfo>::const_iterator it = infos.begin();
        it != infos.end(); ++it) {
     map[it->name] = *it;
 
-    if (!have_human && (!strcmp(it->name, "human") ||
-                         !strcmp(it->name, "Player"))) {
+    if (!found_human && !it->is_robot) {
       human = *it;
-      have_human = true;
+      found_human = true;
     } else {
       dummy = (dummy.veloc > it->veloc) ? dummy : *it;
-      have_dummy = true;
+      found_dummy = true;
     }
   }
 
   const float GO_BLINK_TIME_ON = 0.5;
   const float GO_BLINK_TIME_OFF = 0.25;
 
-  if (init_phase && have_human && have_dummy) {
-    if (human.veloc <= kmph2mps(20.0) && dummy.veloc >= 15.0) {
+  if (init_phase && found_human && found_dummy) {
+    if (human.veloc <= kmph2mps(70.0) && dummy.veloc >= kmph2mps(50.0)) {
       const double now = dummy.time;
       const double period = go_enabled ? GO_BLINK_TIME_OFF : GO_BLINK_TIME_ON;
       if (now - go_time > period) {
@@ -861,13 +545,13 @@ void cWorldModel::cGraphicInfoDisplay::process(
       go_enabled = false;
     }
     wait_enabled = go_time == 0.0l &&
-                   human.veloc <= kmph2mps(20.0) && dummy.veloc < 15.0;
-    init_phase = human.veloc <= kmph2mps(20.0);
+                   human.veloc <= kmph2mps(70.0) && dummy.veloc < kmph2mps(50.0);
+    init_phase = human.veloc <= kmph2mps(70.0);
   }
 }
 
 #define NLINES 6
-void cWorldModel::cGraphicInfoDisplay::redraw()
+void cObserver::cGraphicInfoDisplay::redraw()
 {
   const int FONT = fonts::F_SMALL;
   const int X = 10;
@@ -923,13 +607,13 @@ void cWorldModel::cGraphicInfoDisplay::redraw()
   }
 }
 
-float cWorldModel::cGraphicInfoDisplay::interval() const
+float cObserver::cGraphicInfoDisplay::interval() const
 {
   return 0.0f;
 }
 
 
-cWorldModel::cGraphicPlanRecogDisplay::cGraphicPlanRecogDisplay()
+cObserver::cGraphicPlanRecogDisplay::cGraphicPlanRecogDisplay()
   : activated(false),
     offset(0),
     n_updates(0)
@@ -938,12 +622,12 @@ cWorldModel::cGraphicPlanRecogDisplay::cGraphicPlanRecogDisplay()
   cRedrawHookManager::instance().register_handler(this);
 }
 
-cWorldModel::cGraphicPlanRecogDisplay::~cGraphicPlanRecogDisplay()
+cObserver::cGraphicPlanRecogDisplay::~cGraphicPlanRecogDisplay()
 {
   cRedrawHookManager::instance().unregister_handler(this);
 }
 
-bool cWorldModel::cGraphicPlanRecogDisplay::poll_str(char* buf, int& len)
+bool cObserver::cGraphicPlanRecogDisplay::poll_str(char* buf, int& len)
 {
   const int stdin_fd = 0;
   struct pollfd pin;
@@ -968,9 +652,9 @@ bool cWorldModel::cGraphicPlanRecogDisplay::poll_str(char* buf, int& len)
   }
 }
 
-bool cWorldModel::cGraphicPlanRecogDisplay::poll_line(char* buf,
-                                                      int& offset,
-                                                      int len)
+bool cObserver::cGraphicPlanRecogDisplay::poll_line(char* buf,
+                                                    int& offset,
+                                                    int len)
 {
   if (offset + 1 >= len) {
     fprintf(stderr, "cleaned buffer, might have ignored plan recog output\n");
@@ -999,7 +683,7 @@ bool cWorldModel::cGraphicPlanRecogDisplay::poll_line(char* buf,
   }
 }
 
-void cWorldModel::cGraphicPlanRecogDisplay::process(
+void cObserver::cGraphicPlanRecogDisplay::process(
     const cDriver& context, const tCarInfo& info)
 {
   if (!activated) {
@@ -1054,7 +738,7 @@ void cWorldModel::cGraphicPlanRecogDisplay::process(
   }
 }
 
-void cWorldModel::cGraphicPlanRecogDisplay::redraw()
+void cObserver::cGraphicPlanRecogDisplay::redraw()
 {
   char buf[64];
 
@@ -1076,10 +760,10 @@ void cWorldModel::cGraphicPlanRecogDisplay::redraw()
   }
 }
 
-void cWorldModel::cGraphicPlanRecogDisplay::print(int line,
-                                                  bool small,
-                                                  const float* color,
-                                                  const char* msg)
+void cObserver::cGraphicPlanRecogDisplay::print(int line,
+                                                bool small,
+                                                const float* color,
+                                                const char* msg)
 {
   const int font = small ? fonts::F_MEDIUM: fonts::F_BIG;
   const int x = 400;
@@ -1088,7 +772,7 @@ void cWorldModel::cGraphicPlanRecogDisplay::print(int line,
                   fonts::ALIGN_CENTER);
 }
 
-float cWorldModel::cGraphicPlanRecogDisplay::interval() const
+float cObserver::cGraphicPlanRecogDisplay::interval() const
 {
   return 0.0f;
 }

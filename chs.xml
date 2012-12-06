@@ -11,11 +11,11 @@
     <section name="index">
 
       <section name="0">
-        <attstr name="name" val="chs-0"></attstr>
-        <attstr name="desc" val="chs-0"></attstr>
+        <attstr name="name" val="a"></attstr>
+        <attstr name="desc" val="a"></attstr>
         <attstr name="team" val=""></attstr>
         <attstr name="author" val="Christoph Schwering"></attstr>
-        <attstr name="car name" val="kc-a110"></attstr>
+        <attstr name="car name" val="baja-bug"/>
         <attnum name="race number" val="61"></attnum>
         <attnum name="red" val="1.0"></attnum>
         <attnum name="green" val="0.0"></attnum>
@@ -23,11 +23,11 @@
       </section>
 
       <section name="1">
-        <attstr name="name" val="chs-1"></attstr>
-        <attstr name="desc" val="chs-1"></attstr>
+        <attstr name="name" val="b"></attstr>
+        <attstr name="desc" val="b"></attstr>
         <attstr name="team" val=""></attstr>
         <attstr name="author" val="Christoph Schwering"></attstr>
-        <attstr name="car name" val="kc-alfatz2"></attstr>
+        <attstr name="car name" val="kc-a110"></attstr>
         <attnum name="race number" val="62"></attnum>
         <attnum name="red" val="0.0"></attnum>
         <attnum name="green" val="1.0"></attnum>
@@ -35,11 +35,11 @@
       </section>
 
       <section name="2">
-        <attstr name="name" val="chs-2"/>
-        <attstr name="team" val="chs-2"/>
+        <attstr name="name" val="c"/>
+        <attstr name="team" val="c"/>
         <attstr name="desc" val=""/>
         <attstr name="author" val="Christoph Schwering"/>
-        <attstr name="car name" val="car1-trb1"/>
+        <attstr name="car name" val="kc-alfatz2"></attstr>
         <attnum name="race number" val="140"/>
         <attnum name="red" val="0.0"/>
         <attnum name="green" val="0.0"/>
@@ -47,8 +47,8 @@
       </section>
 
       <section name="3">
-        <attstr name="name" val="chs-3"/>
-        <attstr name="team" val="chs-3"/>
+        <attstr name="name" val="d"/>
+        <attstr name="team" val="d"/>
         <attstr name="desc" val=""/>
         <attstr name="author" val="Christoph Schwering"/>
         <attstr name="car name" val="car1-trb1"/>
@@ -59,8 +59,8 @@
       </section>
 
       <section name="4">
-        <attstr name="name" val="chs-4"/>
-        <attstr name="team" val="chs-4"/>
+        <attstr name="name" val="e"/>
+        <attstr name="team" val="e"/>
         <attstr name="desc" val=""/>
         <attstr name="author" val="Christoph Schwering"/>
         <attstr name="car name" val="car1-trb1"/>
@@ -71,8 +71,8 @@
       </section>
 
       <section name="5">
-        <attstr name="name" val="chs-5"/>
-        <attstr name="team" val="chs-5"/>
+        <attstr name="name" val="f"/>
+        <attstr name="team" val="f"/>
         <attstr name="desc" val=""/>
         <attstr name="author" val="Christoph Schwering"/>
         <attstr name="car name" val="car1-trb1"/>
@@ -83,8 +83,8 @@
       </section>
 
       <section name="6">
-        <attstr name="name" val="chs-6"/>
-        <attstr name="team" val="chs-6"/>
+        <attstr name="name" val="g"/>
+        <attstr name="team" val="g"/>
         <attstr name="desc" val=""/>
         <attstr name="author" val="Christoph Schwering"/>
         <attstr name="car name" val="car1-trb1"/>
@@ -95,8 +95,8 @@
       </section>
 
       <section name="7">
-        <attstr name="name" val="chs-7"/>
-        <attstr name="team" val="chs-7"/>
+        <attstr name="name" val="i"/>
+        <attstr name="team" val="i"/>
         <attstr name="desc" val=""/>
         <attstr name="author" val="Christoph Schwering"/>
         <attstr name="car name" val="car1-trb1"/>
@@ -107,8 +107,8 @@
       </section>
 
       <section name="8">
-        <attstr name="name" val="chs-8"/>
-        <attstr name="team" val="chs-8"/>
+        <attstr name="name" val="j"/>
+        <attstr name="team" val="j"/>
         <attstr name="desc" val=""/>
         <attstr name="author" val="Christoph Schwering"/>
         <attstr name="car name" val="car1-trb1"/>
@@ -119,8 +119,8 @@
       </section>
 
       <section name="9">
-        <attstr name="name" val="chs-9"/>
-        <attstr name="team" val="chs-9"/>
+        <attstr name="name" val="k"/>
+        <attstr name="team" val="k"/>
         <attstr name="desc" val=""/>
         <attstr name="author" val="Christoph Schwering"/>
         <attstr name="car name" val="car1-trb3"/>

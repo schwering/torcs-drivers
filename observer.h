@@ -1,5 +1,5 @@
-#ifndef worldmodelH
-#define worldmodelH
+#ifndef observerH
+#define observerH
 
 #include <map>
 #include <string>
@@ -18,16 +18,17 @@
 #include "pnmimage.h"
 #include "wrapped_container.h"
 
-class cWorldModel : public cDriver::cHandler
+class cObserver : public cDriver::cHandler
 {
  public:
   struct tCarInfo
   {
     tCarInfo()
-        : name(NULL), time(0.0), veloc(0.0f), accel(0.0f),
+        : name(NULL), is_robot(true), time(0.0), veloc(0.0f), accel(0.0f),
           yaw(0.0f), pos(0.0f), offset(0.0f), laps(0) { }
 
     const char* name;
+    bool is_robot;
     double time;
     float veloc;
     float accel;
@@ -63,22 +64,6 @@ class cWorldModel : public cDriver::cHandler
 
   class cRedrawHookManager;
 
-  class cSimplePrologSerializor : public cListener
-  {
-   public:
-    explicit cSimplePrologSerializor(const char *name);
-    virtual ~cSimplePrologSerializor();
-    virtual void process(const cDriver& context,
-                         const std::vector<tCarInfo>& infos);
-    virtual float interval() const;
-
-   private:
-    FILE *fp;
-    bool activated;
-    tCtrlMouseInfo* mouseInfo;
-    double virtualStart;
-  };
-
   class cSimpleMercurySerializor : public cListener
   {
    public:
@@ -93,30 +78,6 @@ class cWorldModel : public cDriver::cHandler
     bool activated;
     double virtualStart;
   };
-
-#if 0
-  class cMercuryInterface : public cListener, cRedrawable
-  {
-   public:
-    explicit cMercuryInterface();
-    virtual ~cMercuryInterface();
-    double normalize_pos(const cDriver& context,
-                         double pos) const;
-    virtual void process(const cDriver& context,
-                         const std::vector<tCarInfo>& infos);
-    virtual float interval() const;
-    virtual void redraw();
-
-   private:
-    static void print(int line,
-                      bool small,
-                      const float* color,
-                      const char* msg);
-
-    bool activated;
-    double virtualStart;
-  };
-#endif
 
   class cMercuryClient : public cListener, cRedrawable
   {
@@ -161,25 +122,6 @@ class cWorldModel : public cDriver::cHandler
     bool activated;
     double virtualStart;
     struct planrecog_state planrecog_state;
-  };
-
-  class cOffsetSerializor : public cListener
-  {
-   public:
-    explicit cOffsetSerializor(const char *name);
-    virtual void process(const cDriver& context,
-                         const tCarInfo& info);
-    virtual float interval() const;
-
-   private:
-    static const int WIDTH = 1024;
-    static const int HEIGHT = 4096;
-    static const int MAX_OFFSET = 7;
-    static const unsigned char BG = 255;
-    static const unsigned char FG = 0;
-
-    cPnmImage img;
-    int row;
   };
 
   class cGraphicInfoDisplay : public cListener, cRedrawable
@@ -240,7 +182,7 @@ class cWorldModel : public cDriver::cHandler
     std::map<std::string, Result> results;
   };
 
-  virtual ~cWorldModel() {}
+  virtual ~cObserver() {}
 
   virtual int priority() const;
   virtual void handle(cDriver& context);
