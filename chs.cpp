@@ -55,9 +55,8 @@ static cDriver& get_driver(int index)
     switch (index) {
       case 0: {
         cObserver* observer = new cObserver();
-        //observer->addListener(new cObserver::cMercuryClient());
+        observer->addListener(new cObserver::cMercuryClient());
         observer->addListener(new cObserver::cGraphicInfoDisplay());
-        observer->addListener(new cObserver::cGraphicPlanRecogDisplay());
         drivers[index]->addHandler(observer);
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_MIDDLE));
         drivers[index]->addHandler(new cMiniThrottle(10.0f));

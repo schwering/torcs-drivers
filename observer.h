@@ -111,8 +111,9 @@ class cObserver : public cDriver::cHandler
                       const boost::system::error_code& ec,
                       std::size_t bytes_transferred);
 
-    float min_confidence() const;
-    float max_confidence() const;
+    float min_confidence(int source) const;
+    float max_confidence(int source) const;
+    std::vector< std::pair<float, float> > confidences() const;
 
     pthread_spinlock_t spinlock;
     boost::asio::io_service io_service;
@@ -142,6 +143,7 @@ class cObserver : public cDriver::cHandler
     bool wait_enabled;
   };
 
+#if 0
   class cGraphicPlanRecogDisplay : public cListener, cRedrawable
   {
    public:
@@ -181,6 +183,7 @@ class cObserver : public cDriver::cHandler
     int n_updates;
     std::map<std::string, Result> results;
   };
+#endif
 
   virtual ~cObserver() {}
 

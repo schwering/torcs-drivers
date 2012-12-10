@@ -337,18 +337,14 @@ void cObserver::cMercuryClient::process(
     const cDriver& context,
     const std::vector<tCarInfo>& infos)
 {
-  if (infos.size() != 2) {
-    return;
-  }
-
   const bool prev_activated = activated;
 
   if (!prev_activated) {
     for (std::vector<tCarInfo>::const_iterator it = infos.begin();
          it != infos.end(); ++it) {
-      activated = activated || mps2kmph(it->veloc) > 73;
+      activated = activated || mps2kmph(it->veloc) > 73.0f;
 #ifdef DA_ACCEL_LIMIT
-      activated = activated || (!it->is_robot && mps2kmph(it->veloc) > 10);
+      activated = activated || (!it->is_robot && mps2kmph(it->veloc) > 10.0f);
 #endif
     }
   }
@@ -436,41 +432,68 @@ void cObserver::cMercuryClient::read_handler(
     std::size_t bytes_transferred)
 {
   memcpy(&planrecog_state, msg, sizeof(*msg));
-  const float min_conf = min_confidence();
-  const float max_conf = max_confidence();
-  printf("%f =< Confidence =< %f\n", min_conf, max_conf);
+  std::vector< std::pair<float, float> > cs = confidences();
+  for (size_t i = 0; i < cs.size(); ++i)
+  {
+    const float min_conf = cs[i].first;
+    const float max_conf = cs[i].second;
+    printf("%lu: %f =< Confidence =< %f\n", i, min_conf, max_conf);
+  }
   delete msg;
   pthread_spin_unlock(&spinlock);
 }
 
-float cObserver::cMercuryClient::min_confidence() const
+float cObserver::cMercuryClient::min_confidence(int source) const
 {
-  const int n = planrecog_state.working + planrecog_state.finished + planrecog_state.failed;
-  return ((float) planrecog_state.finished) / ((float) n);
+  const int numer = planrecog_state.sources[source].finished;
+  const int denom = planrecog_state.sources[source].working +
+                    planrecog_state.sources[source].finished +
+                    planrecog_state.sources[source].failed;
+  return ((float) numer) / ((float) denom);
 }
 
-float cObserver::cMercuryClient::max_confidence() const
+float cObserver::cMercuryClient::max_confidence(int source) const
 {
-  const int n = planrecog_state.working + planrecog_state.finished + planrecog_state.failed;
-  return ((float) planrecog_state.working + planrecog_state.finished) / ((float) n);
+  const int numer = planrecog_state.sources[source].working +
+                    planrecog_state.sources[source].finished;
+  const int denom = planrecog_state.sources[source].working +
+                    planrecog_state.sources[source].finished +
+                    planrecog_state.sources[source].failed;
+  return ((float) numer) / ((float) denom);
+}
+
+std::vector< std::pair<float, float> >
+cObserver::cMercuryClient::confidences() const
+{
+  std::vector< std::pair<float, float> > v(planrecog_state.n_sources);
+  for (int i = 0; i < planrecog_state.n_sources; ++i) {
+    v[i] = std::make_pair(min_confidence(i), max_confidence(i));
+  }
+  return v;
 }
 
 void cObserver::cMercuryClient::redraw()
 {
-  char min_buf[16];
-  char max_buf[16];
   //pthread_spin_lock(&spinlock);
-  const float min_conf = min_confidence();
-  const float max_conf = max_confidence();
+  std::vector< std::pair<float, float> > cs = confidences();
   //pthread_spin_unlock(&spinlock);
-  sprintf(min_buf, "%.1f%%", min_conf * 100.0f);
-  sprintf(max_buf, "%.1f%%", max_conf * 100.0f);
-  const float* min_col = (min_conf > 0.02 ? colors::GREEN : colors::RED);
-  const float* max_col = (max_conf > 0.02 ? colors::GREEN : colors::RED);
-  const float* cen_col = (min_col == colors::GREEN ? colors::GREEN : max_col == colors::RED ? colors::RED : colors::YELLOW);
-  print(1, -1, false, min_col, min_buf);
-  print(1,  0, false, cen_col, "=< p =<");
-  print(1,  1, false, max_col, max_buf);
+  for (size_t i = 0; i < cs.size(); ++i)
+  {
+    const float min_conf = cs[i].first;
+    const float max_conf = cs[i].second;
+    char min_buf[16];
+    char max_buf[16];
+    char cen_buf[16];
+    sprintf(min_buf, "%.1f%%", min_conf * 100.0f);
+    sprintf(max_buf, "%.1f%%", max_conf * 100.0f);
+    sprintf(cen_buf, "=< p_%lu =<", i);
+    const float* min_col = (min_conf > 0.02 ? colors::GREEN : colors::RED);
+    const float* max_col = (max_conf > 0.02 ? colors::GREEN : colors::RED);
+    const float* cen_col = (min_col == colors::GREEN ? colors::GREEN : max_col == colors::RED ? colors::RED : colors::YELLOW);
+    print(i+1, -1, false, min_col, min_buf);
+    print(i+1,  0, false, cen_col, cen_buf);
+    print(i+1,  1, false, max_col, max_buf);
+  }
 }
 
 void cObserver::cMercuryClient::print(int row,
@@ -480,7 +503,7 @@ void cObserver::cMercuryClient::print(int row,
                                       const char* msg)
 {
   const int font = small ? fonts::F_MEDIUM: fonts::F_BIG;
-  const int x = 400 + col * 150;
+  const int x = 400 + col * 180;
   const int y = 550 - row * 45;
   GfuiPrintString(msg, const_cast<float*>(color), font, x, y,
                   fonts::ALIGN_CENTER);
@@ -613,6 +636,7 @@ float cObserver::cGraphicInfoDisplay::interval() const
 }
 
 
+#if 0
 cObserver::cGraphicPlanRecogDisplay::cGraphicPlanRecogDisplay()
   : activated(false),
     offset(0),
@@ -776,4 +800,5 @@ float cObserver::cGraphicPlanRecogDisplay::interval() const
 {
   return 0.0f;
 }
+#endif
 
