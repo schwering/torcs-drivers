@@ -251,7 +251,7 @@ void cObserver::cSimpleMercurySerializor::process(
       for (std::vector<tCarInfo>::const_iterator it = infos.begin();
            it != infos.end(); ++it) {
         char kind = (!prev_activated && activated) ? 'I' : 'O';
-        const char *name = (!strcmp(it->name, "human")) ? "b" : "a";
+        const char *name = it->name;
         double veloc = it->veloc;
         double yaw = it->yaw;
         double x = it->pos;
@@ -303,12 +303,22 @@ cObserver::cMercuryClient::cMercuryClient()
   cRedrawHookManager::instance().register_handler(this);
 
   pthread_spin_init(&spinlock, PTHREAD_PROCESS_PRIVATE);
+  memset(&planrecog_state, 0, sizeof(&planrecog_state));
+}
+
+void cObserver::cMercuryClient::connect()
+{
   using boost::asio::ip::tcp;
   tcp::resolver resolver(io_service);
   tcp::resolver::query query(tcp::v4(), MERCURY_HOST, MERCURY_PORT);
   tcp::resolver::iterator iterator = resolver.resolve(query);
-  boost::asio::connect(socket, iterator);
-  memset(&planrecog_state, 0, sizeof(&planrecog_state));
+  try {
+    boost::asio::connect(socket, iterator);
+  } catch (const std::exception& exc) {
+    fprintf(stderr, "Connecting to Mercury server %s:%s failed.\n",
+            MERCURY_HOST.c_str(), MERCURY_PORT.c_str());
+    throw;
+  }
 }
 
 cObserver::cMercuryClient::~cMercuryClient()
@@ -322,8 +332,10 @@ cObserver::cMercuryClient::~cMercuryClient()
   ReMovieCaptureHack(0);
 }
 
-double cObserver::cMercuryClient::normalize_pos(const cDriver& context,
-                                                double pos) const
+namespace {
+double normalize_pos(double virtualStart,
+                     const cDriver& context,
+                     double pos)
 {
   if (pos >= virtualStart) {
     pos -= virtualStart;
@@ -331,6 +343,13 @@ double cObserver::cMercuryClient::normalize_pos(const cDriver& context,
     pos += context.track->length - virtualStart;
   }
   return pos;
+}
+}
+
+double cObserver::cMercuryClient::normalize_pos(const cDriver& context,
+                                                double pos) const
+{
+  return ::normalize_pos(virtualStart, context, pos);
 }
 
 void cObserver::cMercuryClient::process(
@@ -432,6 +451,7 @@ void cObserver::cMercuryClient::read_handler(
     std::size_t bytes_transferred)
 {
   memcpy(&planrecog_state, msg, sizeof(*msg));
+  /*
   std::vector< std::pair<float, float> > cs = confidences();
   for (size_t i = 0; i < cs.size(); ++i)
   {
@@ -439,6 +459,7 @@ void cObserver::cMercuryClient::read_handler(
     const float max_conf = cs[i].second;
     printf("%lu: %f =< Confidence =< %f\n", i, min_conf, max_conf);
   }
+  */
   delete msg;
   pthread_spin_unlock(&spinlock);
 }
@@ -522,7 +543,8 @@ cObserver::cGraphicInfoDisplay::cGraphicInfoDisplay()
   : init_phase(true),
     go_enabled(false),
     go_time(0.0l),
-    wait_enabled(false)
+    wait_enabled(false),
+    virtualStart(-1.0)
 {
   cRedrawHookManager::instance().register_handler(this);
 }
@@ -536,13 +558,34 @@ void cObserver::cGraphicInfoDisplay::process(
     const cDriver& context,
     const std::vector<tCarInfo>& infos)
 {
+  if (virtualStart < 0.0) {
+    bool init = false;
+    double minPos = 0.0;
+    int minLaps = 0;
+    for (std::vector<tCarInfo>::const_iterator it = infos.begin();
+         it != infos.end(); ++it) {
+      if (!init ||
+          it->laps < minLaps ||
+          (it->laps == minLaps && it->pos < minPos)) {
+        init = true;
+        minPos = it->pos;
+        minLaps = it->laps;
+      }
+    }
+    virtualStart = minPos;
+    assert(init);
+    assert(virtualStart >= 0.0);
+  }
+
   bool found_human = false;
   bool found_dummy = false;
   tCarInfo human = tCarInfo();
   tCarInfo dummy = tCarInfo();
   for (std::vector<tCarInfo>::const_iterator it = infos.begin();
        it != infos.end(); ++it) {
-    map[it->name] = *it;
+    tCarInfo copy = *it;
+    copy.pos = ::normalize_pos(virtualStart, context, it->pos);
+    map[it->name] = copy;
 
     if (!found_human && !it->is_robot) {
       human = *it;
@@ -573,8 +616,15 @@ void cObserver::cGraphicInfoDisplay::process(
   }
 }
 
-#define NLINES 6
 void cObserver::cGraphicInfoDisplay::redraw()
+{
+  draw_info_sheet();
+  draw_distance_sheet();
+  draw_message();
+}
+
+#define NLINES 6
+void cObserver::cGraphicInfoDisplay::draw_info_sheet()
 {
   const int FONT = fonts::F_SMALL;
   const int X = 10;
@@ -586,14 +636,14 @@ void cObserver::cGraphicInfoDisplay::redraw()
     Y[i] = Y[i+1] + 25;
   }
 
-  float *white = const_cast<float*>(colors::YELLOW);
+  float *yellow = const_cast<float*>(colors::YELLOW);
   int i = 0;
-  GfuiPrintString("name", white, FONT, X, Y[i++], fonts::ALIGN_LEFT);
-  GfuiPrintString("pos", white, FONT, X, Y[i++], fonts::ALIGN_LEFT);
-  GfuiPrintString("offset", white, FONT, X, Y[i++], fonts::ALIGN_LEFT);
-  GfuiPrintString("veloc", white, FONT, X, Y[i++], fonts::ALIGN_LEFT);
-  GfuiPrintString("accel", white, FONT, X, Y[i++], fonts::ALIGN_LEFT);
-  GfuiPrintString("deg", white, FONT, X, Y[i++], fonts::ALIGN_LEFT);
+  GfuiPrintString("name", yellow, FONT, X, Y[i++], fonts::ALIGN_LEFT);
+  GfuiPrintString("pos", yellow, FONT, X, Y[i++], fonts::ALIGN_LEFT);
+  GfuiPrintString("offset", yellow, FONT, X, Y[i++], fonts::ALIGN_LEFT);
+  GfuiPrintString("veloc", yellow, FONT, X, Y[i++], fonts::ALIGN_LEFT);
+  GfuiPrintString("accel", yellow, FONT, X, Y[i++], fonts::ALIGN_LEFT);
+  GfuiPrintString("deg", yellow, FONT, X, Y[i++], fonts::ALIGN_LEFT);
 
   int col = 0;
   for (std::map<std::string, tCarInfo>::const_iterator it = map.begin();
@@ -604,19 +654,61 @@ void cObserver::cGraphicInfoDisplay::redraw()
     int x = X + COLUMN_WIDTH + (col + 1) * COLUMN_WIDTH;
     char buf[32];
     int i = 0;
-    GfuiPrintString(name.c_str(), white, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
+    GfuiPrintString(name.c_str(), yellow, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
     sprintf(buf, "%.0f", ci.pos);
-    GfuiPrintString(buf, white, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
+    GfuiPrintString(buf, yellow, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
     sprintf(buf, "%.1f", ci.offset);
-    GfuiPrintString(buf, white, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
+    GfuiPrintString(buf, yellow, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
     sprintf(buf, "%.1f", ci.veloc);
-    GfuiPrintString(buf, white, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
+    GfuiPrintString(buf, yellow, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
     sprintf(buf, "%.1f", ci.accel);
-    GfuiPrintString(buf, white, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
+    GfuiPrintString(buf, yellow, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
     sprintf(buf, "%.1f", rad2deg(ci.yaw));
-    GfuiPrintString(buf, white, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
+    GfuiPrintString(buf, yellow, FONT, x, Y[i++], fonts::ALIGN_RIGHT);
     ++col;
+  }
+}
 
+void cObserver::cGraphicInfoDisplay::draw_distance_sheet()
+{
+  const int FONT = fonts::F_MEDIUM;
+  const int X = 790;
+  const int DELTA_Y = 25;
+  float *yellow = const_cast<float*>(colors::YELLOW);
+
+  int y = 250;
+  for (std::map<std::string, tCarInfo>::const_iterator it = map.begin();
+       it != map.end(); ++it)
+  {
+    const std::string& bn = it->first;
+    const tCarInfo& bi = it->second;
+    for (std::map<std::string, tCarInfo>::const_iterator jt = map.begin();
+         jt != map.end(); ++jt)
+    {
+      if (it == jt)
+        continue;
+      char ntg_buf[64];
+      char ttc_buf[64];
+      const std::string& cn = jt->first;
+      const tCarInfo& ci = jt->second;
+      const double dist = ci.pos - bi.pos;
+      const float ntg = dist / bi.veloc;
+      const float ttc = dist / (bi.veloc - ci.veloc);
+      sprintf(ntg_buf, "ntg(%s,%s) = %.1f", bn.c_str(), cn.c_str(), ntg);
+      sprintf(ttc_buf, "ttc(%s,%s) = %.1f", bn.c_str(), cn.c_str(), ttc);
+      y -= DELTA_Y;
+      GfuiPrintString(ntg_buf, yellow, FONT, X, y, fonts::ALIGN_RIGHT);
+      y -= DELTA_Y;
+      GfuiPrintString(ttc_buf, yellow, FONT, X, y, fonts::ALIGN_RIGHT);
+    }
+  }
+}
+
+void cObserver::cGraphicInfoDisplay::draw_message()
+{
+  for (std::map<std::string, tCarInfo>::const_iterator it = map.begin();
+       it != map.end(); ++it)
+  {
     if (wait_enabled || go_enabled) {
       float *yellow = const_cast<float*>(colors::YELLOW);
       float *green = const_cast<float*>(colors::GREEN);
@@ -628,6 +720,7 @@ void cObserver::cGraphicInfoDisplay::redraw()
                       x, y, fonts::ALIGN_CENTER);
     }
   }
+
 }
 
 float cObserver::cGraphicInfoDisplay::interval() const

@@ -9,7 +9,7 @@
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 
-#include <car-obs-torcs-types.h>
+#include <domain-car-obs-torcs-types.h>
 
 #include <tgfclient.h>
 
@@ -84,8 +84,8 @@ class cObserver : public cDriver::cHandler
    public:
     explicit cMercuryClient();
     virtual ~cMercuryClient();
-    double normalize_pos(const cDriver& context,
-                         double pos) const;
+    void connect();
+    double normalize_pos(const cDriver& context, double pos) const;
     virtual void process(const cDriver& context,
                          const std::vector<tCarInfo>& infos);
     virtual float interval() const;
@@ -134,6 +134,9 @@ class cObserver : public cDriver::cHandler
                          const std::vector<tCarInfo>& infos);
     virtual float interval() const;
     virtual void redraw();
+    void draw_info_sheet();
+    void draw_distance_sheet();
+    void draw_message();
 
    private:
     std::map<std::string, tCarInfo> map;
@@ -141,6 +144,7 @@ class cObserver : public cDriver::cHandler
     bool go_enabled;
     double go_time;
     bool wait_enabled;
+    double virtualStart;
   };
 
 #if 0

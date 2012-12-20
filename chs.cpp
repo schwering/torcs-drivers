@@ -55,12 +55,21 @@ static cDriver& get_driver(int index)
     switch (index) {
       case 0: {
         cObserver* observer = new cObserver();
-        observer->addListener(new cObserver::cMercuryClient());
+        cObserver::cMercuryClient* mercury = new cObserver::cMercuryClient();
+        try {
+          mercury->connect();
+          observer->addListener(mercury);
+        } catch (std::exception& exc) {
+          delete mercury;
+          fprintf(stderr, "Caught exception for Mercury client: %s\n",
+                  exc.what());
+        }
+        observer->addListener(new cObserver::cSimpleMercurySerializor("/home/chs/Documents/Mercury/prGolog/logs/tailgate"));
         observer->addListener(new cObserver::cGraphicInfoDisplay());
         drivers[index]->addHandler(observer);
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_MIDDLE));
         drivers[index]->addHandler(new cMiniThrottle(10.0f));
-        drivers[index]->addHandler(new cDelay(5.0));
+        drivers[index]->addHandler(new cDelay(12.0f));
         break;
       }
       case 1: {
@@ -74,9 +83,15 @@ static cDriver& get_driver(int index)
         break;
       }
       case 3: {
+        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_RIGHT));
+        drivers[index]->addHandler(new cMiniThrottle(74.8f));
+        drivers[index]->addHandler(new cDelay(2.0f));
+        break;
+      }
+      case 4: {
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_LEFT));
         drivers[index]->addHandler(new cMiniThrottle(60.0f));
-        drivers[index]->addHandler(new cDelay(5));
+        drivers[index]->addHandler(new cDelay(5.0f));
         break;
       }
     }
@@ -97,9 +112,10 @@ int chs(tModInfo* modInfo)
     description[i] = "";
   }
   description[0] = "Observer (right, 10km/h, 15s delay)";
-  description[1] = "Passable (right, 59km/h)";
-  description[2] = "Passable (right, 50km/h)";
-  description[3] = "Passing (left lane, 60km/h, 5s delay)";
+  description[1] = "Cruising (right, 59km/h)";
+  description[2] = "Cruising (right, 50km/h)";
+  description[3] = "Cruising (right, 74.8km/h, 2s delay)";
+  description[4] = "Cruising (left lane, 60km/h, 5s delay)";
 
   memset(modInfo, 0, MAX_BOTS*sizeof(tModInfo));
   for (int i = 0; i < MAX_BOTS; ++i) {
