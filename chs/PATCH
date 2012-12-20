@@ -1,0 +1,97 @@
+*** ../../libs/raceengineclient/raceengine.h	2012-12-20 19:54:42.069081641 +0100
+--- ../../libs/raceengineclient/raceengine.h	2012-12-20 19:57:11.377822021 +0100
+***************
+*** 35,40 ****
+--- 35,42 ----
+  
+  extern tRmInfo	*ReInfo;
+  
++ extern void ReSetRedrawHook(void (*func)(void));
++ 
+  #endif /* _RACEENGINE_H_ */ 
+  
+  
+*** ../../libs/raceengineclient/raceengine.cpp	2012-12-20 19:54:47.677109449 +0100
+--- ../../libs/raceengineclient/raceengine.cpp	2012-12-20 20:13:32.346686380 +0100
+***************
+*** 677,682 ****
+--- 677,689 ----
+  	free(img);
+  }
+  
++ static void (*redrawHook)(void) = NULL;
++ 
++ void ReSetRedrawHook(void (*func)(void))
++ {
++ 	redrawHook = func;
++ }
++ 
+  int
+  ReUpdate(void)
+  {
+***************
+*** 707,712 ****
+--- 714,722 ----
+  			GfuiDisplay();
+  			ReInfo->_reGraphicItf.refresh(ReInfo->s);
+  			glutPostRedisplay();	/* Callback -> reDisplay */
++ 			if (redrawHook != NULL) {
++ 				redrawHook();
++ 			}
+  			break;
+  
+  		case RM_DISP_MODE_NONE:
+*** ../../libs/raceengineclient/Makefile	2012-12-20 19:54:34.053041886 +0100
+--- ../../libs/raceengineclient/Makefile	2012-12-20 19:57:14.629838150 +0100
+***************
+*** 25,31 ****
+  
+  EXPDIR       = include
+  
+! EXPORTS      = singleplayer.h raceinit.h
+  
+  SHIPDIR      = config
+  
+--- 25,31 ----
+  
+  EXPDIR       = include
+  
+! EXPORTS      = singleplayer.h raceinit.h raceengine.h
+  
+  SHIPDIR      = config
+  
+*** ../../linux/Makefile.orig	2012-12-20 20:48:24.949063036 +0100
+--- ../../linux/Makefile	2012-12-20 20:50:08.389575980 +0100
+***************
+*** 25,39 ****
+  
+  LDFLAGS = -rdynamic
+  
+! SOLIBS  =  -lracescreens  \
+! 	   -lrobottools   \
+! 	   -lclient       \
+  	   -lconfscreens  \
+  	   -ltgf          \
+  	   -ltgfclient    \
+  	   -ltxml	  \
+  	   -lplibul	  \
+  	   -lraceengine   \
+  	   -lmusicplayer  \
+  	   -llearning
+  
+--- 25,39 ----
+  
+  LDFLAGS = -rdynamic
+  
+! SOLIBS  =  -lclient       \
+  	   -lconfscreens  \
+  	   -ltgf          \
+  	   -ltgfclient    \
+  	   -ltxml	  \
+  	   -lplibul	  \
+  	   -lraceengine   \
++ 	   -lracescreens  \
++ 	   -lrobottools   \
+  	   -lmusicplayer  \
+  	   -llearning
+  

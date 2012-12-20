@@ -8,13 +8,11 @@
 #include <boost/bind.hpp>
 
 #include <raceinit.h>
-#include <raceengine.h>
 #include <tgfclient.h>
+#include <raceengine.h>
 
 #include "macros.h"
 #include "util.h"
-
-#include "../scenario.h"
 
 #define MAXPROGLEN 512
 
@@ -30,12 +28,10 @@ const int F_SMALL = GFUI_FONT_MEDIUM_C;
 const int F_MEDIUM = GFUI_FONT_LARGE_C;
 const int F_LARGE = GFUI_FONT_LARGE_C;
 const int F_BIG = GFUI_FONT_BIG_C;
-const int F_HUGE = GFUI_FONT_HUGE_C;
 
 const int F_SMALL_BOLD = GFUI_FONT_LARGE;
 const int F_LARGE_BOLD = GFUI_FONT_LARGE;
 const int F_BIG_BOLD = GFUI_FONT_BIG;
-const int F_HUGE_BOLD = GFUI_FONT_HUGE;
 
 const int ALIGN_CENTER = GFUI_ALIGN_HC_VC;
 const int ALIGN_RIGHT = GFUI_ALIGN_HR_VC;
@@ -191,7 +187,6 @@ cObserver::cSimpleMercurySerializor::cSimpleMercurySerializor(const char *name)
 
 cObserver::cSimpleMercurySerializor::~cSimpleMercurySerializor()
 {
-  ReMovieCaptureHack(0);
   fclose(fp);
 }
 
@@ -213,7 +208,6 @@ void cObserver::cSimpleMercurySerializor::process(
 
   if (!prev_activated && activated) {
     fprintf(stderr, "Starting to observe.\n");
-    ReMovieCaptureHack(0);
   }
 
   if (activated) {
@@ -329,7 +323,6 @@ cObserver::cMercuryClient::~cMercuryClient()
   pthread_spin_destroy(&spinlock);
 
   cRedrawHookManager::instance().unregister_handler(this);
-  ReMovieCaptureHack(0);
 }
 
 namespace {
@@ -370,7 +363,6 @@ void cObserver::cMercuryClient::process(
 
   if (!prev_activated && activated) {
     fprintf(stderr, "Starting to observe.\n");
-    ReMovieCaptureHack(0);
   }
 
   if (activated) {
@@ -716,7 +708,7 @@ void cObserver::cGraphicInfoDisplay::draw_message()
       const int x = 400;
       const int y = 400;
       const char* msg = go_enabled ? "Go get him!" : "Wait for it...";
-      GfuiPrintString(msg, color, fonts::F_HUGE_BOLD,
+      GfuiPrintString(msg, color, fonts::F_BIG_BOLD,
                       x, y, fonts::ALIGN_CENTER);
     }
   }

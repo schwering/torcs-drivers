@@ -23,8 +23,6 @@
 #include "simpledriver.h"
 #include "transmission.h"
 
-#include "../scenario.h"
-
 #define MAX_BOTS 4
 
 cDriver* drivers[MAX_BOTS] = { NULL, NULL, NULL, NULL/*, NULL, NULL, NULL, NULL, NULL, NULL*/ };

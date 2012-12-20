@@ -1,0 +1,11 @@
+;
+; human2.def
+;
+
+LIBRARY	human2
+
+SECTIONS .data READ WRITE
+
+EXPORTS
+	human2
+
