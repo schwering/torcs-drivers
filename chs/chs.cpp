@@ -62,7 +62,7 @@ static cDriver& get_driver(int index)
           fprintf(stderr, "Caught exception for Mercury client: %s\n",
                   exc.what());
         }
-        observer->addListener(new cObserver::cSimpleMercurySerializor("/home/chs/Documents/Mercury/prGolog/logs/tailgate"));
+        //observer->addListener(new cObserver::cSimpleMercurySerializor("/home/chs/Documents/Mercury/prGolog/logs/tailgate"));
         observer->addListener(new cObserver::cGraphicInfoDisplay());
         drivers[index]->addHandler(observer);
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_MIDDLE));

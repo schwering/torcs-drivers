@@ -14,8 +14,9 @@
 *** ../../libs/raceengineclient/raceengine.cpp	2012-12-20 19:54:47.677109449 +0100
 --- ../../libs/raceengineclient/raceengine.cpp	2012-12-20 20:13:32.346686380 +0100
 ***************
-*** 677,682 ****
---- 677,689 ----
+*** 676,682 ****
+--- 676,689 ----
+  	GfImgWritePng(img, buf, vw, vh);
   	free(img);
   }
   
@@ -95,3 +96,17 @@
   	   -lmusicplayer  \
   	   -llearning
   
+*** ../../data/tracks/road/alpine-2/alpine-2.xml	2008-06-05 01:09:18.000000000 +0200
+--- ../../data/tracks/road/alpine-2/alpine-2.xml	2012-12-21 23:06:59.862307744 +0100
+***************
+*** 19,24 ****
+--- 19,27 ----
+  ]>
+  
+  <params name="test" type="param" mode="mw">
++   <section name="Starting Grid">
++     <attnum name="distance to start" val="125.000000"/>
++   </section>
+    <section name="Surfaces">
+      &default-surfaces;
+      <section name="a2-road">
