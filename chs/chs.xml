@@ -51,7 +51,7 @@
         <attstr name="team" val="d"/>
         <attstr name="desc" val=""/>
         <attstr name="author" val="Christoph Schwering"/>
-        <attstr name="car name" val="car1-trb1"/>
+        <attstr name="car name" val="kc-alfatz2"></attstr>
         <attnum name="race number" val="141"/>
         <attnum name="red" val="0.0"/>
         <attnum name="green" val="1.0"/>

@@ -9,7 +9,7 @@
 			
 			<section name="1">
 				<attstr name="name" val="h"/>
-				<attstr name="car name" val="car7-trb1"/>
+                                <attstr name="car name" val="kc-a110"></attstr>
 				<attnum name="race number" val="20.000000"/>
 				<attnum name="red" val="1.000000"/>
 				<attnum name="green" val="1.000000"/>

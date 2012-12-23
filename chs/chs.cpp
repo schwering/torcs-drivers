@@ -83,7 +83,7 @@ static cDriver& get_driver(int index)
       case 3: {
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_RIGHT));
         drivers[index]->addHandler(new cMiniThrottle(74.8f));
-        drivers[index]->addHandler(new cDelay(2.0f));
+        //drivers[index]->addHandler(new cDelay(2.0f));
         break;
       }
       case 4: {
@@ -112,7 +112,7 @@ int chs(tModInfo* modInfo)
   description[0] = "Observer (right, 10km/h, 15s delay)";
   description[1] = "Cruising (right, 59km/h)";
   description[2] = "Cruising (right, 50km/h)";
-  description[3] = "Cruising (right, 74.8km/h, 2s delay)";
+  description[3] = "Cruising (right, 74.8km/h)";
   description[4] = "Cruising (left lane, 60km/h, 5s delay)";
 
   memset(modInfo, 0, MAX_BOTS*sizeof(tModInfo));
@@ -137,11 +137,11 @@ static int initFuncPt(int index, void* pt)
   itf->rbNewTrack = initTrack;  /* Give the robot the track view called */
                                 /* for every track change or new race */
   itf->rbNewRace  = newRace;  /* Start a new race */
-  itf->rbDrive  = drive;  /* Drive during race */
+  itf->rbDrive    = drive;  /* Drive during race */
   itf->rbPitCmd   = NULL;
   itf->rbEndRace  = endRace;  /* End of the current race */
   itf->rbShutdown = shutdown;   /* Called before the module is unloaded */
-  itf->index    = index;  /* Index used if multiple interfaces */
+  itf->index      = index;  /* Index used if multiple interfaces */
   return 0;
 }
 
