@@ -76,6 +76,7 @@ class cObserver : public cDriver::cHandler
    private:
     FILE *fp;
     bool activated;
+    double activationTime;
     double virtualStart;
   };
 
@@ -121,6 +122,7 @@ class cObserver : public cDriver::cHandler
     boost::thread io_thread;
     boost::asio::ip::tcp::socket socket;
     bool activated;
+    double activationTime;
     double virtualStart;
     struct planrecog_state planrecog_state;
   };
