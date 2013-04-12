@@ -23,9 +23,9 @@
 #include "simpledriver.h"
 #include "transmission.h"
 
-#define MAX_BOTS 4
+#define MAX_BOTS 6
 
-cDriver* drivers[MAX_BOTS] = { NULL, NULL, NULL, NULL/*, NULL, NULL, NULL, NULL, NULL, NULL*/ };
+cDriver* drivers[MAX_BOTS] = { NULL, NULL, NULL, NULL, NULL/*, NULL, NULL, NULL, NULL, NULL*/ };
 
 static cDriver& get_driver(int index);
 static void initTrack(int         index,
@@ -62,34 +62,40 @@ static cDriver& get_driver(int index)
           fprintf(stderr, "Caught exception for Mercury client: %s\n",
                   exc.what());
         }
-        //observer->addListener(new cObserver::cSimpleMercurySerializor("/home/chs/Documents/Mercury/prGolog/logs/tailgate"));
+        observer->addListener(new cObserver::cSimpleMercurySerializor("/home/chs/Documents/Mercury/prGolog/logs/overtake"));
         observer->addListener(new cObserver::cGraphicInfoDisplay());
         drivers[index]->addHandler(observer);
-        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_MIDDLE));
+        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::cRandomLaneChanges(cSimpleDriver::ORI_RIGHT)));
         drivers[index]->addHandler(new cMiniThrottle(10.0f));
         drivers[index]->addHandler(new cDelay(12.0f));
         break;
       }
       case 1: {
-        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_RIGHT));
-        drivers[index]->addHandler(new cMiniThrottle(59.0f));
-        break;
-      }
-      case 2: {
-        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_RIGHT));
+        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::cConstantLane(cSimpleDriver::ORI_RIGHT)));
         drivers[index]->addHandler(new cMiniThrottle(50.0f));
         break;
       }
+      case 2: {
+        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::cConstantLane(cSimpleDriver::ORI_RIGHT)));
+        drivers[index]->addHandler(new cMiniThrottle(60.0f));
+        break;
+      }
       case 3: {
-        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_RIGHT));
-        drivers[index]->addHandler(new cMiniThrottle(74.8f));
-        //drivers[index]->addHandler(new cDelay(2.0f));
+        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::cConstantLane(cSimpleDriver::ORI_LEFT)));
+        drivers[index]->addHandler(new cMiniThrottle(60.0f));
+        drivers[index]->addHandler(new cDelay(3.0f));
         break;
       }
       case 4: {
-        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::ORI_LEFT));
-        drivers[index]->addHandler(new cMiniThrottle(60.0f));
+        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::cOvertakeWhenNeeded(cSimpleDriver::ORI_RIGHT)));
+        drivers[index]->addHandler(new cMiniThrottle(80.0f));
         drivers[index]->addHandler(new cDelay(5.0f));
+        break;
+      }
+      case 5: {
+        drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::cOvertakeWhenNeeded(cSimpleDriver::ORI_LEFT)));
+        drivers[index]->addHandler(new cMiniThrottle(90.0f));
+        drivers[index]->addHandler(new cDelay(10.0f));
         break;
       }
     }
@@ -110,10 +116,11 @@ int chs(tModInfo* modInfo)
     description[i] = "";
   }
   description[0] = "Observer (right, 10km/h, 15s delay)";
-  description[1] = "Cruising (right, 59km/h)";
-  description[2] = "Cruising (right, 50km/h)";
-  description[3] = "Cruising (right, 74.8km/h)";
-  description[4] = "Cruising (left lane, 60km/h, 5s delay)";
+  description[1] = "Cruising (right, 50km/h)";
+  description[2] = "Cruising (right, 60km/h)";
+  description[3] = "Cruising (left, 60km/h, 5s)";
+  description[4] = "Lane changer (right lane, 80km/h, 5s delay)";
+  description[5] = "Overtaking (left lane, 90km/h, 10s delay)";
 
   memset(modInfo, 0, MAX_BOTS*sizeof(tModInfo));
   for (int i = 0; i < MAX_BOTS; ++i) {

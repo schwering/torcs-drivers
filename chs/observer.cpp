@@ -181,6 +181,7 @@ class cObserver::cRedrawHookManager
 cObserver::cSimpleMercurySerializor::cSimpleMercurySerializor(const char *name)
   : fp(fopen_next(name, "log")),
     activated(false),
+    activationTime(-1.0),
     virtualStart(-1.0)
 {
 }
@@ -199,10 +200,13 @@ void cObserver::cSimpleMercurySerializor::process(
   if (!prev_activated) {
     for (std::vector<tCarInfo>::const_iterator it = infos.begin();
          it != infos.end(); ++it) {
-      activated = activated || mps2kmph(it->veloc) > 73;
+      activated = activated || (!it->is_robot && mps2kmph(it->veloc) > 60.0f);
 #ifdef DA_ACCEL_LIMIT
       activated = activated || (!it->is_robot && mps2kmph(it->veloc) > 10);
 #endif
+    }
+    if (activated) {
+      activationTime = context.sit->currentTime;
     }
   }
 
@@ -210,7 +214,7 @@ void cObserver::cSimpleMercurySerializor::process(
     fprintf(stderr, "Starting to observe.\n");
   }
 
-  if (activated) {
+  if (activated && context.sit->currentTime > activationTime + 1.0) {
     /* Cars start before the starting line and therefore with a high position,
      * that is, the sequence of positions could be 2900, 3000, 3100, 100, 200.
      * These discontiguous don't fit our simple driving model in basic action
@@ -292,6 +296,7 @@ cObserver::cMercuryClient::cMercuryClient()
     io_thread(boost::bind(&boost::asio::io_service::run, &io_service)),
     socket(io_service),
     activated(false),
+    activationTime(-1.0),
     virtualStart(-1.0)
 {
   cRedrawHookManager::instance().register_handler(this);
@@ -354,10 +359,13 @@ void cObserver::cMercuryClient::process(
   if (!prev_activated) {
     for (std::vector<tCarInfo>::const_iterator it = infos.begin();
          it != infos.end(); ++it) {
-      activated = activated || mps2kmph(it->veloc) > 73.0f;
+      activated = activated || mps2kmph(it->veloc) > 75.0f;
 #ifdef DA_ACCEL_LIMIT
       activated = activated || (!it->is_robot && mps2kmph(it->veloc) > 10.0f);
 #endif
+    }
+    if (activated) {
+      activationTime = context.sit->currentTime;
     }
   }
 
@@ -365,7 +373,7 @@ void cObserver::cMercuryClient::process(
     fprintf(stderr, "Starting to observe.\n");
   }
 
-  if (activated) {
+  if (activated && context.sit->currentTime > activationTime + 1.0) {
     /* Cars start before the starting line and therefore with a high position,
      * that is, the sequence of positions could be 2900, 3000, 3100, 100, 200.
      * These discontiguous don't fit our simple driving model in basic action
@@ -615,12 +623,12 @@ void cObserver::cGraphicInfoDisplay::redraw()
   draw_message();
 }
 
-#define NLINES 6
 void cObserver::cGraphicInfoDisplay::draw_info_sheet()
 {
   const int FONT = fonts::F_SMALL;
   const int X = 10;
   const int COLUMN_WIDTH = 50;
+  const int NLINES = 6;
   int Y[NLINES];
 
   Y[NLINES - 1] = 40;

@@ -503,6 +503,7 @@ static void common_drive(int index, tCarElt* car, tSituation *s)
 #define UNLIMITED       2
 #define N_DRIVING_MODES 3
         static int drivingMode = 0;
+        static tdble currentSpeedLimit = 75.0f;
 
 	static int firstTime = 1;
 
@@ -583,6 +584,7 @@ static void common_drive(int index, tCarElt* car, tSituation *s)
 		//sprintf(car->_msgCmd[1], "Speed Limiter Off");
 	}
 
+
 	if (((cmd[CMD_LIGHT1].type == GFCTRL_TYPE_JOY_BUT) && joyInfo->edgeup[cmd[CMD_LIGHT1].val]) ||
 		((cmd[CMD_LIGHT1].type == GFCTRL_TYPE_KEYBOARD) && keyInfo[cmd[CMD_LIGHT1].val].edgeUp) ||
 		((cmd[CMD_LIGHT1].type == GFCTRL_TYPE_SKEYBOARD) && skeyInfo[cmd[CMD_LIGHT1].val].edgeUp))
@@ -608,6 +610,41 @@ static void common_drive(int index, tCarElt* car, tSituation *s)
         float red[4] = {1.0, 0.0, 0.0, 1.0};
         GfuiPrintString(drivingModeStr, red, GFUI_FONT_MEDIUM_C, 10, 550 - 90, GFUI_ALIGN_HL_VC);
 
+        /* Shift up/down and neutral/reverse gear
+         * increase/decrease the speed limit. */
+        if (drivingMode == SPEED_LIMITED) {
+		if (((cmd[CMD_UP_SHFT].type == GFCTRL_TYPE_JOY_BUT) && joyInfo->edgeup[cmd[CMD_UP_SHFT].val]) ||
+			((cmd[CMD_UP_SHFT].type == GFCTRL_TYPE_MOUSE_BUT) && mouseInfo->edgeup[cmd[CMD_UP_SHFT].val]) ||
+			((cmd[CMD_UP_SHFT].type == GFCTRL_TYPE_KEYBOARD) && keyInfo[cmd[CMD_UP_SHFT].val].edgeUp) ||
+			((cmd[CMD_UP_SHFT].type == GFCTRL_TYPE_SKEYBOARD) && skeyInfo[cmd[CMD_UP_SHFT].val].edgeUp))
+		{
+	            currentSpeedLimit += 1.0f;
+		}
+
+		if (((cmd[CMD_DN_SHFT].type == GFCTRL_TYPE_JOY_BUT) && joyInfo->edgeup[cmd[CMD_DN_SHFT].val]) ||
+			((cmd[CMD_DN_SHFT].type == GFCTRL_TYPE_MOUSE_BUT) && mouseInfo->edgeup[cmd[CMD_DN_SHFT].val]) ||
+			((cmd[CMD_DN_SHFT].type == GFCTRL_TYPE_KEYBOARD) && keyInfo[cmd[CMD_DN_SHFT].val].edgeUp) ||
+			((cmd[CMD_DN_SHFT].type == GFCTRL_TYPE_SKEYBOARD) && skeyInfo[cmd[CMD_DN_SHFT].val].edgeUp))
+		{
+	            currentSpeedLimit -= 1.0f;
+		}
+
+		if (((cmd[CMD_GEAR_R].type == GFCTRL_TYPE_JOY_BUT) && joyInfo->edgeup[cmd[CMD_GEAR_R].val]) ||
+			((cmd[CMD_GEAR_R].type == GFCTRL_TYPE_MOUSE_BUT) && mouseInfo->edgeup[cmd[CMD_GEAR_R].val]) ||
+			((cmd[CMD_GEAR_R].type == GFCTRL_TYPE_KEYBOARD) && keyInfo[cmd[CMD_GEAR_R].val].edgeUp) ||
+			((cmd[CMD_GEAR_R].type == GFCTRL_TYPE_SKEYBOARD) && skeyInfo[cmd[CMD_GEAR_R].val].edgeUp))
+		{
+	            currentSpeedLimit += 10.0f;
+		}
+
+		if (((cmd[CMD_GEAR_N].type == GFCTRL_TYPE_JOY_BUT) && joyInfo->edgeup[cmd[CMD_GEAR_N].val]) ||
+			((cmd[CMD_GEAR_N].type == GFCTRL_TYPE_MOUSE_BUT) && mouseInfo->edgeup[cmd[CMD_GEAR_N].val]) ||
+			((cmd[CMD_GEAR_N].type == GFCTRL_TYPE_KEYBOARD) && keyInfo[cmd[CMD_GEAR_N].val].edgeUp) ||
+			((cmd[CMD_GEAR_N].type == GFCTRL_TYPE_SKEYBOARD) && skeyInfo[cmd[CMD_GEAR_N].val].edgeUp))
+		{
+	            currentSpeedLimit -= 10.0f;
+		}
+        }
 
 	if (((cmd[CMD_LIGHT1].type == GFCTRL_TYPE_JOY_BUT) && joyInfo->edgeup[cmd[CMD_LIGHT1].val]) ||
 		((cmd[CMD_LIGHT1].type == GFCTRL_TYPE_KEYBOARD) && keyInfo[cmd[CMD_LIGHT1].val].edgeUp) ||
@@ -985,37 +1022,15 @@ static void common_drive(int index, tCarElt* car, tSituation *s)
 	}
 
         if (drivingMode == SPEED_LIMITED) {
-            const tdble Vgoal = 75.0f / 3.6f;
-            static tdble Vmax = Vgoal;
-            static bool speedLimitEnabled = false;
+            const tdble Vgoal = currentSpeedLimit / 3.6f;
+            const tdble Vdiff = car->_speed_x - Vgoal;
 
-            //speedLimitEnabled |= car->_speed_x >= Vgoal - 2.0 / 3.6;
-            speedLimitEnabled |= true;
-
-            if (speedLimitEnabled) {
-                //const tdble VgoalDiff = car->_speed_x - Vgoal;
-                //Vmax -= VgoalDiff;
-
-                const tdble Vdiff = car->_speed_x - Vmax;
-                if (Vdiff > 0.0) {
-                    car->_brakeCmd = MAX(car->_brakeCmd, fabs(Vdiff / 5.0));
-                    car->_accelCmd = 0;
-                } else if (Vdiff < 0.0) {
-                    //car->_accelCmd = MIN(car->_accelCmd, fabs(Vdiff / 5.0));
-                    car->_accelCmd = MIN(car->_accelCmd, 2.0 * fabs(Vdiff));
-                }
-
-                /*
-                const double BROADENING = 10.0; // stretch Vdiff^3 function somewhat
-                const double ACCELBOOST = 13.5; // accel has much less effect than brake
-                const double NOACCEL = 1.35; // before braking, we can just avoid accel
-                const double NOBREAK = 0.1; // before accel, we can just avoid braking
-                const double diff = -1.0 * Vdiff * 3.6;
-                const double cmd = diff*diff*diff * BROADENING;
-                car->_accelCmd = (float) MAX(0.0, MIN(car->_accelCmd, ACCELBOOST * cmd - NOBREAK));
-                car->_brakeCmd = -1.0f * (float) MAX(-1.0, MIN(-1.0 * car->_brakeCmd, cmd + NOACCEL));
-                printf("diff = %7.4lf     veloc = %7.4lf\n", diff, car->_speed_x*3.6);
-                */
+            if (Vdiff > 0.0) {
+                car->_brakeCmd = MAX(car->_brakeCmd, fabs(Vdiff / 5.0));
+                car->_accelCmd = 0;
+            } else if (Vdiff < 0.0) {
+                //car->_accelCmd = MIN(car->_accelCmd, fabs(Vdiff / 5.0));
+                car->_accelCmd = MIN(car->_accelCmd, 2.0 * fabs(Vdiff));
             }
         }
 
