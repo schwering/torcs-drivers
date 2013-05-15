@@ -200,8 +200,9 @@ void cObserver::cSimpleMercurySerializor::process(
   if (!prev_activated) {
     for (std::vector<tCarInfo>::const_iterator it = infos.begin();
          it != infos.end(); ++it) {
+#if 0
       activated = activated || (!it->is_robot && mps2kmph(it->veloc) > 60.0f);
-#ifdef DA_ACCEL_LIMIT
+#else
       activated = activated || (!it->is_robot && mps2kmph(it->veloc) > 10);
 #endif
     }
@@ -359,8 +360,9 @@ void cObserver::cMercuryClient::process(
   if (!prev_activated) {
     for (std::vector<tCarInfo>::const_iterator it = infos.begin();
          it != infos.end(); ++it) {
+#if 0
       activated = activated || mps2kmph(it->veloc) > 75.0f;
-#ifdef DA_ACCEL_LIMIT
+#else
       activated = activated || (!it->is_robot && mps2kmph(it->veloc) > 10.0f);
 #endif
     }
@@ -400,6 +402,7 @@ void cObserver::cMercuryClient::process(
     }
 
     struct observation_record* obs_rec = new struct observation_record;
+    memset(obs_rec, 0, sizeof(*obs_rec));
     obs_rec->t = infos[0].time;
     obs_rec->n_agents = infos.size();
 
@@ -407,7 +410,9 @@ void cObserver::cMercuryClient::process(
     assert(infos.size() <= NAGENTS);
     for (std::vector<tCarInfo>::const_iterator it = infos.begin();
          it != infos.end(); ++it) {
-      const int i = it - infos.begin();
+      const int i = agent_to_index(it->name);
+      assert(0 <= i && i < NAGENTS);
+      obs_rec->info[i].present = 1;
       strncpy(obs_rec->info[i].agent, it->name, AGENTLEN);
       obs_rec->info[i].veloc = it->veloc;
       obs_rec->info[i].rad = it->yaw;

@@ -62,7 +62,7 @@ static cDriver& get_driver(int index)
           fprintf(stderr, "Caught exception for Mercury client: %s\n",
                   exc.what());
         }
-        observer->addListener(new cObserver::cSimpleMercurySerializor("/home/chs/Documents/Mercury/prGolog/logs/overtake"));
+        observer->addListener(new cObserver::cSimpleMercurySerializor("/home/chs/Documents/Haskell/prGolog/logs/overtake"));
         observer->addListener(new cObserver::cGraphicInfoDisplay());
         drivers[index]->addHandler(observer);
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::cRandomLaneChanges(cSimpleDriver::ORI_RIGHT)));
@@ -83,7 +83,7 @@ static cDriver& get_driver(int index)
       case 3: {
         drivers[index]->addHandler(new cSimpleDriver(cSimpleDriver::cConstantLane(cSimpleDriver::ORI_LEFT)));
         drivers[index]->addHandler(new cMiniThrottle(60.0f));
-        drivers[index]->addHandler(new cDelay(3.0f));
+        drivers[index]->addHandler(new cDelay(2.0f));
         break;
       }
       case 4: {
@@ -118,7 +118,7 @@ int chs(tModInfo* modInfo)
   description[0] = "Observer (right, 10km/h, 15s delay)";
   description[1] = "Cruising (right, 50km/h)";
   description[2] = "Cruising (right, 60km/h)";
-  description[3] = "Cruising (left, 60km/h, 5s)";
+  description[3] = "Cruising (left, 60km/h, 2s)";
   description[4] = "Lane changer (right lane, 80km/h, 5s delay)";
   description[5] = "Overtaking (left lane, 90km/h, 10s delay)";
 
