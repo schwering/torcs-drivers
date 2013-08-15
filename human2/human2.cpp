@@ -1216,6 +1216,57 @@ static void drive_at(int index, tCarElt* car, tSituation *s)
 	int idx = index - 1;
 	tControlCmd	*cmd = HCtx[idx]->CmdControl;
 
+#ifndef NO_SCR_LOGGING
+	/* We want to learn the effects of acceleration and steering on
+	 * speed_x/speed_y and the angle, respectively.
+	 * 
+	 * For that we record some data. Note that we always print the
+	 * speed_[xy], angle, accel command, and brake command from the
+	 * *previous* cycle together with the speed_[xy] and angle with
+	 * the current cycle.
+	 *
+	 * That is, we print the effects of the state plus commands from
+	 * the previous cycle in the current cycle.
+	 */
+
+        static bool init = false;
+        static tdble last_speed_x = 0;
+        static tdble last_speed_y = 0;
+        static tdble last_angle = 0;
+        static tdble last_accel = 0;
+        static tdble last_brake = 0;
+        static tdble last_steer = 0;
+
+        tdble speed_x = car->_speed_x;
+        tdble speed_y = car->_speed_y;
+        tdble angle = RtTrackSideTgAngleL(&(car->_trkPos)) - car->_yaw;
+        NORM_PI_PI(angle);
+
+	if (!init) {
+		printf("# last_speed_x \t speed_x \t "
+			 "last_speed_y \t speed_y \t "
+			 "last_angle \t angle \t\t "
+			 "last_accel \t last_brake \t "
+			 "last_steer\n");
+	}
+	//init = false;
+	//if (last_steer != 0.0) printf("%lf  %lf  %lf  %lf\n", last_steer, last_angle/M_PI*180, angle/M_PI*180, (angle-last_angle)/M_PI*180);
+	if (init) {
+		char str[256];
+		sprintf(str, "%lf \t %lf \t "
+			     "%lf \t %lf \t "
+			     "%lf \t %lf \t "
+			     "%lf \t %lf \t "
+			     "%lf\n",
+			     (double) last_speed_x, (double) speed_x,
+			     (double) last_speed_y, (double) speed_y,
+			     (double) last_angle,   (double) angle,
+			     (double) last_accel,   (double) last_brake,
+			     (double) last_steer);
+		printf(str);
+	}
+#endif
+
 	common_drive(index, car, s);
 
 	/* shift */
@@ -1305,6 +1356,16 @@ static void drive_at(int index, tCarElt* car, tSituation *s)
 
 	if (HCtx[idx]->autoClutch && car->_clutchCmd == 0.0f)
 	    car->_clutchCmd = getAutoClutch(idx, car->_gear, car->_gearCmd, car);
+
+#ifndef NO_SCR_LOGGING
+	last_speed_x = speed_x;
+	last_speed_y = speed_y;
+	last_angle = angle;
+        last_accel = car->_accelCmd;
+        last_brake = car->_brakeCmd;
+        last_steer = car->_steerCmd;
+        init = true;
+#endif
 }
 
 static int pitcmd(int index, tCarElt* car, tSituation *s)
